@@ -12,6 +12,8 @@ public class LeaderState extends BaseState{
 
     public LeaderState(StateManager stateManager) {
         super(stateManager);
+
+        onStart();
     }
 
     @Override

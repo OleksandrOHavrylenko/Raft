@@ -1,5 +1,6 @@
 package org.distributed.service.election;
 
+import org.distributed.model.ElectionStatus;
 import org.distributed.model.NodeInfo;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.statemachine.CandidateState;
@@ -26,11 +27,10 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
-    public void startLeaderElection() {
+    public ElectionStatus startLeaderElection() {
         LOGGER.info("Starting leader election");
         nodeInfo.incrementAndGet();
 
-
-
+        return ElectionStatus.RESTART_ELECTION;
     }
 }

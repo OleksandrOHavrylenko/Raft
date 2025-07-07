@@ -19,7 +19,7 @@ public class FollowerState extends BaseState {
 
     public FollowerState(final StateManager stateManager) {
         super(stateManager);
-        this.electionTimeoutMillis = getRandomIntInRange(150, 300);
+        this.electionTimeoutMillis = getRandomIntInRange(1500, 3000);
         this.onStart();
     }
 
@@ -52,10 +52,6 @@ public class FollowerState extends BaseState {
     @Override
     public State getCurrentState() {
         return this.currentState;
-    }
-
-    private int getRandomIntInRange(int min, int max) {
-        return new Random(System.currentTimeMillis()).nextInt(min, max + 1);
     }
 
     private void startElectionTimer() {

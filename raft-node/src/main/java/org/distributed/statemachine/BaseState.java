@@ -1,6 +1,7 @@
 package org.distributed.statemachine;
 
 import java.util.Objects;
+import java.util.Random;
 
 /**
  * @author Oleksandr Havrylenko
@@ -17,4 +18,8 @@ public abstract class BaseState {
     public abstract void enterState();
     public abstract void nextState(BaseState state);
     public abstract State getCurrentState();
+
+    protected int getRandomIntInRange(int min, int max) {
+        return new Random(System.currentTimeMillis()).nextInt(min, max + 1);
+    }
 }
