@@ -3,7 +3,6 @@ package org.distributed.service.election;
 import org.distributed.model.ElectionStatus;
 import org.distributed.model.NodeInfo;
 import org.distributed.model.cluster.ClusterInfo;
-import org.distributed.statemachine.CandidateState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,6 +30,6 @@ public class ElectionServiceImpl implements ElectionService {
         LOGGER.info("Starting leader election");
         nodeInfo.incrementAndGet();
 
-        return ElectionStatus.RESTART_ELECTION;
+        return ElectionStatus.ELECTED;
     }
 }

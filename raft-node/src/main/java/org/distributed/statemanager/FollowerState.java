@@ -1,9 +1,8 @@
-package org.distributed.statemachine;
+package org.distributed.statemanager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 

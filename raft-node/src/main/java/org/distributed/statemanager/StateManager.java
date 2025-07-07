@@ -1,4 +1,4 @@
-package org.distributed.statemachine;
+package org.distributed.statemanager;
 
 import org.distributed.service.election.ElectionService;
 import org.slf4j.Logger;

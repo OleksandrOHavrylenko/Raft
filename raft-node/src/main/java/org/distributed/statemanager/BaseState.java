@@ -1,4 +1,4 @@
-package org.distributed.statemachine;
+package org.distributed.statemanager;
 
 import java.util.Objects;
 import java.util.Random;

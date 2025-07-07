@@ -1,4 +1,4 @@
-package org.distributed.statemachine;
+package org.distributed.statemanager;
 
 /**
  * @author Oleksandr Havrylenko
