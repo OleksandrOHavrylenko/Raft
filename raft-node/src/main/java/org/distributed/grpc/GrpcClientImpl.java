@@ -1,4 +1,4 @@
-package org.distributed.service.election;
+package org.distributed.grpc;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;

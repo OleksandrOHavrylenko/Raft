@@ -1,4 +1,4 @@
-package org.distributed.service.election;
+package org.distributed.grpc;
 
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;

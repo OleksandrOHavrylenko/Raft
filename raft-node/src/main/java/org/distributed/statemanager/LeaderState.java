@@ -10,9 +10,9 @@ public class LeaderState extends BaseState{
     private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
     private final State currentState = State.LEADER;
 
-    public LeaderState(StateManager stateManager) {
+    public LeaderState(final StateManager stateManager) {
         super(stateManager);
-
+        LOGGER.info("Leader new Leader elected!");
         onStart();
     }
 

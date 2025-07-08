@@ -1,7 +1,7 @@
 package org.distributed.model;
 
-import org.distributed.service.election.GrpcClient;
-import org.distributed.service.election.GrpcClientImpl;
+import org.distributed.grpc.GrpcClient;
+import org.distributed.grpc.GrpcClientImpl;
 
 import java.util.Objects;
 
