@@ -1,0 +1,58 @@
+services:
+  node1:
+    environment:
+      - NODE_ID=node1
+      - GRPC_PORT=9090
+      - NODE1_HOST=node2
+      - NODE1_PORT=9090
+      - NODE2_HOST=node3
+      - NODE2_PORT=9090
+    container_name: node1
+    image: ogavrylenko/raft-node:v1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8080
+    networks:
+     - raft-net
+
+  node2:
+    environment:
+      - NODE_ID=node2
+      - GRPC_PORT=9090
+      - NODE1_HOST=node1
+      - NODE1_PORT=9090
+      - NODE2_HOST=node3
+      - NODE2_PORT=9090
+    container_name: node2
+    image: ogavrylenko/raft-node:v1
+    ports:
+      - 8082:8080
+    networks:
+      - raft-net
+    depends_on:
+      - node1
+
+  node3:
+    environment:
+      - NODE_ID=node3
+      - GRPC_PORT=9090
+      - NODE1_HOST=node1
+      - NODE1_PORT=9090
+      - NODE2_HOST=node2
+      - NODE2_PORT=9090
+    image: ogavrylenko/raft-node:v1
+    container_name: node3
+    ports:
+      - 8083:8080
+    networks:
+      - raft-net
+    depends_on:
+      - node1
+      - node2
+
+networks:
+  raft-net:
+    name: raft-net
+    driver: bridge

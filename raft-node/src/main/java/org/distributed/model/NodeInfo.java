@@ -1,18 +1,15 @@
 package org.distributed.model;
 
-import org.springframework.stereotype.Component;
-
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Oleksandr Havrylenko
  **/
 public class NodeInfo {
-    private String nodeId = "node1";
-    private String host;
-    private int port;
-    private AtomicInteger term = new AtomicInteger(0);
+    private final String nodeId;
+    private final String host;
+    private final int port;
+    private final AtomicInteger term = new AtomicInteger(0);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
         this.nodeId = nodeId;
@@ -23,11 +20,30 @@ public class NodeInfo {
     public int getTerm() {
         return term.get();
     }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
     public int incrementAndGet() {
         return term.incrementAndGet();
     }
 
     public String getNodeId() {
         return nodeId;
+    }
+
+    @Override
+    public String toString() {
+        return "NodeInfo{" +
+                "nodeId='" + nodeId + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", term=" + term +
+                '}';
     }
 }

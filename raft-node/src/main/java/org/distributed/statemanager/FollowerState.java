@@ -18,7 +18,8 @@ public class FollowerState extends BaseState {
 
     public FollowerState(final StateManager stateManager) {
         super(stateManager);
-        this.electionTimeoutMillis = getRandomIntInRange(1500, 3000);
+        this.electionTimeoutMillis = getRandomIntInRange(15000, 30000);
+        LOGGER.info("electionTimeoutMillis = " + this.electionTimeoutMillis);
         this.onStart();
     }
 
@@ -27,8 +28,6 @@ public class FollowerState extends BaseState {
         LOGGER.info("Starting FollowerState");
         startElectionTimer();
     }
-
-
 
     @Override
     public void incomingHeartbeatFromLeader() {

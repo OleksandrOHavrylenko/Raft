@@ -2,9 +2,13 @@ package org.distributed.model.cluster;
 
 import org.distributed.model.ClusterNode;
 import org.distributed.model.NodeInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -12,8 +16,19 @@ import java.util.List;
  **/
 @Component
 public class ClusterInfo {
-    private NodeInfo currentNode = new NodeInfo("node1", "localhost", 9092);
-    private List<ClusterNode> otherNodes = new ArrayList<ClusterNode>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClusterInfo.class);
+
+    private final NodeInfo currentNode;
+    private final List<ClusterNode> otherNodes;
+
+    public ClusterInfo(@Value("${node.id}") String nodeId, @Value("${grpc.server.port}") int port,
+                       @Value("${grpc.node1.host}") String host1, @Value("${grpc.node1.port}") int port1,
+                       @Value("${grpc.node2.host}") String host2, @Value("${grpc.node2.port}") int port2) {
+        this.currentNode = new NodeInfo(nodeId, nodeId, port);
+        this.otherNodes = Arrays.asList(new ClusterNode(host1, host1, port1), new ClusterNode(host2, host2, port2));
+
+        LOGGER.info("Cluster created on Node = {}, with other nodes = {}", this.currentNode, this.otherNodes);
+    }
 
     public NodeInfo getCurrentNode() {
         return currentNode;
@@ -27,10 +42,8 @@ public class ClusterInfo {
         return (getClusterSize() / 2) + 1;
     }
 
-//   TODO fixme
     public int getOtherNodeCount() {
-//        return otherNodes.size();
-        return 2;
+        return otherNodes.size();
     }
 
     public List<ClusterNode> getOtherNodes() {

@@ -12,7 +12,7 @@ public class ClusterNode {
     private final String nodeId;
     private final String host;
     private final int port;
-    private GrpcClient grpcClient;
+    private final GrpcClient grpcClient;
 
 
     public ClusterNode(final String nodeId, final String host, final int port) {
@@ -24,5 +24,14 @@ public class ClusterNode {
 
     public GrpcClient getGrpcClient() {
         return grpcClient;
+    }
+
+    @Override
+    public String toString() {
+        return "ClusterNode{" +
+                "nodeId='" + nodeId + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                '}';
     }
 }

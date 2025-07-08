@@ -39,7 +39,7 @@ public class GrpcClientImpl implements GrpcClient {
 
         ResponseVoteRPC responseVoteRPC;
         try {
-            responseVoteRPC = voteBlockingStub.withDeadlineAfter(timeoutMillis, TimeUnit.MICROSECONDS)
+            responseVoteRPC = voteBlockingStub.withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
                     .requestVote(request);
         } catch (StatusRuntimeException e) {
             LOGGER.warn("RPC requestVote to host: {} - failed: {}", this.host, e.getStatus());

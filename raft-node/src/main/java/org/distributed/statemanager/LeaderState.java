@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.cluster.ClusterInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,10 +10,12 @@ import org.slf4j.LoggerFactory;
 public class LeaderState extends BaseState{
     private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
     private final State currentState = State.LEADER;
+    private final ClusterInfo clusterInfo;
 
     public LeaderState(final StateManager stateManager) {
         super(stateManager);
-        LOGGER.info("Leader new Leader elected!");
+        this.clusterInfo = stateManager.getClusterInfo();
+        LOGGER.info("Leader new Leader elected as NodeId: {}!", clusterInfo.getCurrentNode().getNodeId());
         onStart();
     }
 
