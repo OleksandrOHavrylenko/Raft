@@ -32,7 +32,7 @@ public class ElectionServiceImpl implements ElectionService {
     @Override
     public ElectionStatus startLeaderElection() {
         LOGGER.info("Starting leader election");
-        clusterInfo.getCurrentNode().incrementAndGet();
+        clusterInfo.getCurrentNode().voteForSelf();
 //        init with 1, because 1 vote for ourself
         final AtomicInteger electionCounter = new AtomicInteger(1);
 

@@ -1,6 +1,8 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.vote.VoteRequest;
+import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +21,11 @@ public class StateManager {
     private final ClusterInfo clusterInfo;
 
     public StateManager(final ElectionService electionService, final ClusterInfo clusterInfo) {
-        this.currentState = new FollowerState(this);
         this.electionService = Objects.requireNonNull(electionService);
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
+
+//        Should be after clusterInfo initialization
+        this.currentState = new FollowerState(this);
         LOGGER.info("StateManager created");
     }
 
@@ -35,5 +39,9 @@ public class StateManager {
 
     public ClusterInfo getClusterInfo() {
         return clusterInfo;
+    }
+
+    public VoteResponse requestVote(final VoteRequest voteRequest) {
+        return currentState.onRequestVote(voteRequest);
     }
 }

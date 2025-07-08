@@ -1,5 +1,8 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.vote.VoteRequest;
+import org.distributed.model.vote.VoteResponse;
+
 import java.util.Objects;
 import java.util.Random;
 
@@ -15,8 +18,10 @@ public abstract class BaseState {
 
     public abstract void onStart();
     public abstract void incomingHeartbeatFromLeader();
-    public abstract void enterState();
-    public abstract void nextState(BaseState state);
+    public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
+    public void nextState(BaseState newState) {
+        this.stateManager.setState(newState);
+    }
     public abstract State getCurrentState();
 
     protected int getRandomIntInRange(int min, int max) {

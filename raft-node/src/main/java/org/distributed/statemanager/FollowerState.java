@@ -1,8 +1,12 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.vote.VoteRequest;
+import org.distributed.model.vote.VoteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -15,11 +19,13 @@ public class FollowerState extends BaseState {
     private final State currentState = State.FOLLOWER;
     private int electionTimeoutMillis;
     private final Timer electionTimer = new Timer();
+    private final ClusterInfo clusterInfo;
 
     public FollowerState(final StateManager stateManager) {
         super(stateManager);
         this.electionTimeoutMillis = getRandomIntInRange(15000, 30000);
-        LOGGER.info("electionTimeoutMillis = " + this.electionTimeoutMillis);
+        LOGGER.debug("electionTimeoutMillis = " + this.electionTimeoutMillis);
+        this.clusterInfo = Objects.requireNonNull(stateManager.getClusterInfo());
         this.onStart();
     }
 
@@ -33,12 +39,20 @@ public class FollowerState extends BaseState {
     public void incomingHeartbeatFromLeader() {
         stopElectionTimer();
         startElectionTimer();
-
     }
 
     @Override
-    public void enterState() {
+    public VoteResponse onRequestVote(final VoteRequest voteRequest) {
+        int currentTerm = clusterInfo.getCurrentNode().getTerm();
 
+        if (currentTerm > voteRequest.term()) {
+            return new VoteResponse(currentTerm, false);
+        } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
+                clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+            return new VoteResponse(currentTerm, true);
+        } else {
+            return new VoteResponse(currentTerm, false);
+        }
     }
 
     @Override

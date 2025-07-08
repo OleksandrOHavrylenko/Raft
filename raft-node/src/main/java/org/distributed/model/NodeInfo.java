@@ -9,6 +9,7 @@ public class NodeInfo {
     private final String nodeId;
     private final String host;
     private final int port;
+    private String votedFor = null;
     private final AtomicInteger term = new AtomicInteger(0);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
@@ -21,6 +22,14 @@ public class NodeInfo {
         return term.get();
     }
 
+    public String getVotedFor() {
+        return votedFor;
+    }
+
+    public void setVotedFor(final String votedFor) {
+        this.votedFor = votedFor;
+    }
+
     public String getHost() {
         return host;
     }
@@ -31,6 +40,10 @@ public class NodeInfo {
 
     public int incrementAndGet() {
         return term.incrementAndGet();
+    }
+    public void voteForSelf() {
+        incrementAndGet();
+        setVotedFor(nodeId);
     }
 
     public String getNodeId() {
@@ -46,4 +59,6 @@ public class NodeInfo {
                 ", term=" + term +
                 '}';
     }
+
+
 }
