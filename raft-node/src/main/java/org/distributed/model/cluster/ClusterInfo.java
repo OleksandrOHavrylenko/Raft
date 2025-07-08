@@ -12,7 +12,12 @@ import java.util.List;
  **/
 @Component
 public class ClusterInfo {
+    private NodeInfo currentNode = new NodeInfo("node1", "localhost", 9092);
     private List<ClusterNode> otherNodes = new ArrayList<ClusterNode>();
+
+    public NodeInfo getCurrentNode() {
+        return currentNode;
+    }
 
     public int getClusterSize() {
         return otherNodes.size() + 1;
@@ -22,7 +27,13 @@ public class ClusterInfo {
         return (getClusterSize() / 2) + 1;
     }
 
-    public List<ClusterNode> clusterNodesNodes() {
+//   TODO fixme
+    public int getOtherNodeCount() {
+//        return otherNodes.size();
+        return 2;
+    }
+
+    public List<ClusterNode> getOtherNodes() {
         return new ArrayList<>(otherNodes);
     }
 

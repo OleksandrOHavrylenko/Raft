@@ -1,5 +1,8 @@
 package org.distributed.model;
 
+import org.distributed.service.election.GrpcClient;
+import org.distributed.service.election.GrpcClientImpl;
+
 import java.util.Objects;
 
 /**
@@ -7,12 +10,19 @@ import java.util.Objects;
  **/
 public class ClusterNode {
     private final String nodeId;
+    private final String host;
+    private final int port;
+    private GrpcClient grpcClient;
 
-    public ClusterNode(final String nodeId) {
+
+    public ClusterNode(final String nodeId, final String host, final int port) {
         this.nodeId = Objects.requireNonNull(nodeId);
+        this.host = Objects.requireNonNull(host);
+        this.port = port;
+        this.grpcClient = new GrpcClientImpl(this.host, this.port);
     }
 
-    public String getNodeId() {
-        return nodeId;
+    public GrpcClient getGrpcClient() {
+        return grpcClient;
     }
 }

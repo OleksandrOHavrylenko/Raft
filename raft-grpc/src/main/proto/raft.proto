@@ -6,7 +6,7 @@ package org.distributed.stubs;
 
 message RequestVoteRPC {
   int32 term = 1;
-  int32 candidateId = 2;
+  string candidateId = 2;
   int32 lastLogIndex = 3;
   int32 lastLogTerm = 4;
 }
