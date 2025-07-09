@@ -1,6 +1,5 @@
 package org.distributed.service.election;
 
-import org.distributed.model.ClusterNode;
 import org.distributed.model.ElectionStatus;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
@@ -9,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 @Service("electionService")
 public class ElectionServiceImpl implements ElectionService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElectionServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ElectionServiceImpl.class);
 
     private final ClusterInfo clusterInfo;
     private final ExecutorService executor;
@@ -31,7 +29,7 @@ public class ElectionServiceImpl implements ElectionService {
 
     @Override
     public ElectionStatus startLeaderElection() {
-        LOGGER.info("Starting leader election");
+        logger.info("Starting leader election");
         clusterInfo.getCurrentNode().voteForSelf();
 //        init with 1, because 1 vote for ourself
         final AtomicInteger electionCounter = new AtomicInteger(1);
@@ -66,7 +64,7 @@ public class ElectionServiceImpl implements ElectionService {
                 electionCounter.incrementAndGet();
             }
         } catch (Exception e) {
-            LOGGER.error("Error occurred during leader election", e);
+            logger.error("Error occurred during leader election", e);
         }
     }
 }

@@ -14,30 +14,32 @@ import java.util.TimerTask;
  * @author Oleksandr Havrylenko
  **/
 public class FollowerState extends BaseState {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FollowerState.class);
+    private static final Logger logger = LoggerFactory.getLogger(FollowerState.class);
 
     private final State currentState = State.FOLLOWER;
     private int electionTimeoutMillis;
-    private final Timer electionTimer = new Timer();
+    private Timer electionTimer;
     private final ClusterInfo clusterInfo;
 
     public FollowerState(final StateManager stateManager) {
         super(stateManager);
-        this.electionTimeoutMillis = getRandomIntInRange(15000, 30000);
-        LOGGER.debug("electionTimeoutMillis = " + this.electionTimeoutMillis);
+        this.electionTimeoutMillis = getRandomIntInRange(1500, 3000);
+        logger.debug("electionTimeoutMillis = " + this.electionTimeoutMillis);
         this.clusterInfo = Objects.requireNonNull(stateManager.getClusterInfo());
         this.onStart();
     }
 
     @Override
     public void onStart() {
-        LOGGER.info("Starting FollowerState");
+        logger.info("Starting FollowerState");
         startElectionTimer();
     }
 
     @Override
-    public void incomingHeartbeatFromLeader() {
+    public void onHeartbeatFromLeader() {
+        logger.info("Heartbeat from leader received in FollowerState");
         stopElectionTimer();
+
         startElectionTimer();
     }
 
@@ -46,11 +48,14 @@ public class FollowerState extends BaseState {
         int currentTerm = clusterInfo.getCurrentNode().getTerm();
 
         if (currentTerm > voteRequest.term()) {
+            logger.info("False -> Requested Vote in Candidate state, Current term is greater than vote term");
             return new VoteResponse(currentTerm, false);
         } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
                 clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+            logger.info("True -> Requested Vote in Candidate state");
             return new VoteResponse(currentTerm, true);
         } else {
+            logger.info("False, because else-> Requested Vote in Candidate state");
             return new VoteResponse(currentTerm, false);
         }
     }
@@ -67,18 +72,23 @@ public class FollowerState extends BaseState {
     }
 
     private void startElectionTimer() {
+        logger.info("Starting election timer in FollowerState");
         final TimerTask startCandidateTask = new TimerTask() {
             @Override
             public void run() {
                 nextState(new CandidateState(stateManager));
             }
         };
-        electionTimer.schedule(startCandidateTask, electionTimeoutMillis);
+        this.electionTimer = new Timer();
+        this.electionTimer.schedule(startCandidateTask, electionTimeoutMillis);
     }
 
     private void stopElectionTimer() {
-        electionTimer.cancel();
+        try {
+            this.electionTimer.cancel();
+            this.electionTimer.purge();
+        } catch (Exception e) {
+            logger.error("Error stopping election timer in Follower State", e);
+        }
     }
-
-
 }

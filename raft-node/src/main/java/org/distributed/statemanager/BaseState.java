@@ -17,7 +17,7 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract void incomingHeartbeatFromLeader();
+    public abstract void onHeartbeatFromLeader();
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public void nextState(BaseState newState) {
         this.stateManager.setState(newState);

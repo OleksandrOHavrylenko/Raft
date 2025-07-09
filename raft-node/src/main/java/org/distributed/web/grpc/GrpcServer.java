@@ -21,12 +21,14 @@ public class GrpcServer {
     private int port;
     private Server grpcServer;
 
-    public GrpcServer(final VoteService voteService, final ClusterInfo clusterInfo) {
+    public GrpcServer(final VoteService voteService, final AppendService appendService,
+                      final ClusterInfo clusterInfo) {
         this.port = Objects.requireNonNull(clusterInfo).getCurrentNode().getPort();
-        grpcServer = ServerBuilder.
-                forPort(this.port).
-                addService(voteService).
-                build();
+        grpcServer = ServerBuilder
+                .forPort(this.port)
+                .addService(voteService)
+                .addService(appendService)
+                .build();
     }
 
     public void start() {
