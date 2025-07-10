@@ -17,7 +17,7 @@ import java.util.TimerTask;
 /**
  * @author Oleksandr Havrylenko
  **/
-public class CandidateState extends BaseState{
+public class CandidateState extends BaseState {
     private static final Logger logger = LoggerFactory.getLogger(CandidateState.class);
     private final State currentState = State.CANDIDATE;
     private int electionTimeoutMillis;
@@ -62,6 +62,11 @@ public class CandidateState extends BaseState{
         if (currentTerm > voteRequest.term()) {
             logger.info("False -> Requested Vote in Candidate state, Current term is greater than vote term");
             return new VoteResponse(currentTerm, false);
+        } else if (currentTerm < voteRequest.term()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
+            nextState(new FollowerState(stateManager));
+            logger.info("True -> Requested Vote in Candidate state, currentTerm < voteRequest.term()");
+            return new VoteResponse(currentTerm, true);
         } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
                 clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
             nextState(new FollowerState(stateManager));
