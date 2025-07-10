@@ -52,9 +52,9 @@ public class ElectionServiceImpl implements ElectionService {
 
         if (electionCounter.get() >= clusterInfo.getMajoritySize()) {
             return ElectionStatus.ELECTED;
+        } else {
+            return ElectionStatus.RESTART_ELECTION;
         }
-
-        return ElectionStatus.RESTART_ELECTION;
     }
 
     private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger electionCounter) {

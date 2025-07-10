@@ -4,6 +4,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.stubs.*;
@@ -51,11 +52,11 @@ public class GrpcClientImpl implements GrpcClient {
     }
 
     @Override
-    public void asyncHeartBeat() {
+    public void asyncHeartBeat(final AppendEntriesRequest appendEntriesRequest) {
         logger.info("HeartBeat --> sent to host: {}", this.host);
 
         RequestAppendEntriesRPC heartBeatRequest = RequestAppendEntriesRPC.newBuilder()
-                .setTerm(0)
+                .setTerm(appendEntriesRequest.term())
                 .build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {

@@ -1,5 +1,6 @@
 package org.distributed.grpc;
 
+import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 
@@ -8,5 +9,5 @@ import org.distributed.model.vote.VoteResponse;
  **/
 public interface GrpcClient {
     VoteResponse requestVote(final VoteRequest voteRequest, final long timeoutMillis);
-    void asyncHeartBeat();
+    void asyncHeartBeat(final AppendEntriesRequest appendEntriesRequest);
 }

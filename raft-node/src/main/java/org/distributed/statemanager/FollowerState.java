@@ -1,5 +1,7 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
@@ -36,11 +38,15 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public void onHeartbeatFromLeader() {
+    public AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
         logger.info("Heartbeat from leader received in FollowerState");
         stopElectionTimer();
+        if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+        }
 
         startElectionTimer();
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
     }
 
     @Override
@@ -80,13 +86,15 @@ public class FollowerState extends BaseState {
             }
         };
         this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, electionTimeoutMillis);
+        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(1500, 3000));
     }
 
     private void stopElectionTimer() {
         try {
-            this.electionTimer.cancel();
-            this.electionTimer.purge();
+            if (this.electionTimer != null) {
+                this.electionTimer.purge();
+                this.electionTimer.cancel();
+            }
         } catch (Exception e) {
             logger.error("Error stopping election timer in Follower State", e);
         }

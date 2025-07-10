@@ -1,5 +1,7 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 
@@ -17,7 +19,7 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract void onHeartbeatFromLeader();
+    public abstract AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public void nextState(BaseState newState) {
         this.stateManager.setState(newState);

@@ -1,6 +1,8 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.ElectionStatus;
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
@@ -43,10 +45,14 @@ public class CandidateState extends BaseState{
     }
 
     @Override
-    public void onHeartbeatFromLeader() {
+    public AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
         logger.info("Heartbeat from Leader in CandidateState");
+        if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+        }
         stopElectionTimer();
         nextState(new FollowerState(stateManager));
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
     }
 
     @Override
@@ -58,6 +64,7 @@ public class CandidateState extends BaseState{
             return new VoteResponse(currentTerm, false);
         } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
                 clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+            nextState(new FollowerState(stateManager));
             logger.info("True -> Requested Vote in Candidate state");
             return new VoteResponse(currentTerm, true);
         } else {
@@ -69,8 +76,8 @@ public class CandidateState extends BaseState{
 
     @Override
     public void nextState(BaseState newState) {
-//        stopElectionTimer();
-        super.nextState(newState);
+        stopElectionTimer();
+        stateManager.setState(newState);
     }
 
     @Override
@@ -79,6 +86,7 @@ public class CandidateState extends BaseState{
     }
 
     private void startElectionTimer() {
+        logger.info("Starting ElectionTimer in CandidateState");
         final TimerTask startCandidateTask = new TimerTask() {
             @Override
             public void run() {
@@ -86,13 +94,15 @@ public class CandidateState extends BaseState{
             }
         };
         this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, electionTimeoutMillis);
+        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(1500, 3000));
     }
 
     private void stopElectionTimer() {
         try {
-            this.electionTimer.cancel();
-            this.electionTimer.purge();
+            if (this.electionTimer != null) {
+                this.electionTimer.cancel();
+                this.electionTimer.purge();
+            }
         } catch (Exception e) {
             logger.error("Error during stopping election timer", e);
         }

@@ -1,6 +1,9 @@
 package org.distributed.web.grpc;
 
 import io.grpc.stub.StreamObserver;
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
+import org.distributed.model.appendentries.LogEntry;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.AppendEntriesServiceGrpc;
 import org.distributed.stubs.RequestAppendEntriesRPC;
@@ -29,13 +32,20 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
         logger.info("appendEntries in gRPC server - request: {}", request);
 
         if (request.getEntriesList().isEmpty()) {
-            stateManager.onHeartbeatFromLeader();
+            final AppendEntriesResponse appendEntriesResponse = stateManager.onHeartbeatFromLeader(convertTo(request));
+
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(10).setSuccess(true).build();
+                    .setTerm(appendEntriesResponse.term()).setSuccess(appendEntriesResponse.success()).build();
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
+    }
 
-
+    private AppendEntriesRequest convertTo(RequestAppendEntriesRPC request) {
+        return new AppendEntriesRequest(request.getTerm(), request.getLeaderId(), request.getPrevLogIndex(),
+                request.getPrevLogTerm(),
+                request.getEntriesList().stream().map(v -> new LogEntry(v.getTerm(), v.getCommand())).toList(),
+                request.getLeaderCommit());
     }
 }

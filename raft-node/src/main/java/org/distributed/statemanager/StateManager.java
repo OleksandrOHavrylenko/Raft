@@ -1,5 +1,7 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
@@ -53,7 +55,7 @@ public class StateManager {
         return currentState.onRequestVote(voteRequest);
     }
 
-    public void onHeartbeatFromLeader () {
-        currentState.onHeartbeatFromLeader();
+    public AppendEntriesResponse onHeartbeatFromLeader (AppendEntriesRequest appendEntriesRequest) {
+        return currentState.onHeartbeatFromLeader(appendEntriesRequest);
     }
 }

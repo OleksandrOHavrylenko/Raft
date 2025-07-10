@@ -1,10 +1,12 @@
 package org.distributed.service.heartbeat;
 
+import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,15 +29,17 @@ public class HeartBeatServiceImpl implements HeartBeatService {
 
     }
 
-
     @Override
     public void startHeartBeatSchedule() {
         logger.info("Starting HeartBeat scheduling");
         clusterInfo.getCurrentNode().voteForSelf();
-        clusterInfo.getOtherNodes().stream()
-                .forEach(otherNode -> scheduledExecutor.schedule(
-                        () -> otherNode.getGrpcClient().asyncHeartBeat(), HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS));
 
+        final AppendEntriesRequest request =
+                new AppendEntriesRequest(
+                        clusterInfo.getCurrentNode().getTerm(), 0, 0, 0, List.of(), 0);
+        clusterInfo.getOtherNodes().stream()
+                .forEach(otherNode -> scheduledExecutor.scheduleWithFixedDelay(
+                        () -> otherNode.getGrpcClient().asyncHeartBeat(request),0,  HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS));
     }
 
     public void shutDownHeartBeats() {
