@@ -32,7 +32,6 @@ public class HeartBeatServiceImpl implements HeartBeatService {
     @Override
     public void startHeartBeatSchedule() {
         logger.info("Starting HeartBeat scheduling");
-        clusterInfo.getCurrentNode().voteForSelf();
 
         final AppendEntriesRequest request =
                 new AppendEntriesRequest(

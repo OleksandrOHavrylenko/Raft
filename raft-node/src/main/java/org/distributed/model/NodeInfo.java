@@ -51,6 +51,11 @@ public class NodeInfo {
         this.term.set(term);
     }
 
+    public void setTerm(final int term, final String nodeId) {
+        setVotedFor(nodeId);
+        this.term.set(term);
+    }
+
     public String getNodeId() {
         return nodeId;
     }
