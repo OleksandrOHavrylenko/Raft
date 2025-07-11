@@ -8,7 +8,7 @@ import java.util.List;
  **/
 public record AppendEntriesRequest(
         int term,
-        int leaderId,
+        String leaderId,
         int prevLogIndex,
         int prevLogTerm,
         List<LogEntry> entries,

@@ -43,31 +43,30 @@ public class FollowerState extends BaseState {
         stopElectionTimer();
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+            startElectionTimer();
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else if (appendEntriesRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+            startElectionTimer();
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else {
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
-
-        startElectionTimer();
-        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
     }
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
-        int currentTerm = clusterInfo.getCurrentNode().getTerm();
 
-        if (currentTerm > voteRequest.term()) {
-            logger.info("False -> Requested Vote in Follower state, Current term is greater than vote term");
-            return new VoteResponse(currentTerm, false);
-        } else if (currentTerm < voteRequest.term()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
-            logger.info("True -> Requested Vote in Follower state, currentTerm < voteRequest.term()");
-            return new VoteResponse(currentTerm, true);
-        } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
-                clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
-            logger.info("True -> Requested Vote in Follower state");
-            return new VoteResponse(currentTerm, true);
-        } else {
-            logger.info("False, because else-> Requested Vote in Follower state");
-            return new VoteResponse(currentTerm, false);
+        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+            if (clusterInfo.getCurrentNode().getVotedFor() == null ||
+                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+                return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+            }
         }
+
+        return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override

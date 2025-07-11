@@ -30,20 +30,17 @@ public class ElectionServiceImpl implements ElectionService {
     @Override
     public ElectionStatus startLeaderElection() {
         logger.info("Starting leader election");
-        clusterInfo.getCurrentNode().voteForSelf();
+
 //        init with 1, because 1 vote for ourself
         final AtomicInteger electionCounter = new AtomicInteger(1);
 
         long timeOutMillis = 100;
-//        TODO fix
-        int lastLogIndex = 10;
-        int lastLotTerm = 10;
 
         VoteRequest voteRequest = new VoteRequest(
                 clusterInfo.getCurrentNode().getTerm(),
                 clusterInfo.getCurrentNode().getNodeId(),
-                lastLogIndex,
-                lastLotTerm);
+                clusterInfo.getCurrentNode().getLastLogIndex(),
+                clusterInfo.getCurrentNode().getLastLogTerm());
 
         clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> executor.submit(

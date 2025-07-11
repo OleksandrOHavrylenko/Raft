@@ -36,6 +36,8 @@ public class CandidateState extends BaseState {
     @Override
     public void onStart() {
         logger.info("Starting CandidateState");
+        clusterInfo.getCurrentNode().voteForSelfAndIncrTerm();
+
         final ElectionStatus electionStatus = this.electionService.startLeaderElection();
         switch (electionStatus) {
             case ELECTED -> nextState(new LeaderState(stateManager));
@@ -45,38 +47,36 @@ public class CandidateState extends BaseState {
     }
 
     @Override
-    public AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
+    public AppendEntriesResponse onHeartbeatFromLeader(final AppendEntriesRequest appendEntriesRequest) {
         logger.info("Heartbeat from Leader in CandidateState");
-        if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+        if (appendEntriesRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+            nextState(new FollowerState(stateManager));
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+            nextState(new FollowerState(stateManager));
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else {
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
-        stopElectionTimer();
-        nextState(new FollowerState(stateManager));
-        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
     }
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
-        int currentTerm = clusterInfo.getCurrentNode().getTerm();
 
-        if (currentTerm > voteRequest.term()) {
-            logger.info("False -> Requested Vote in Candidate state, Current term is greater than vote term");
-            return new VoteResponse(currentTerm, false);
-        } else if (currentTerm < voteRequest.term()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
+        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             nextState(new FollowerState(stateManager));
-            logger.info("True -> Requested Vote in Candidate state, currentTerm < voteRequest.term()");
-            return new VoteResponse(currentTerm, true);
-        } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
-                clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
-            nextState(new FollowerState(stateManager));
-            logger.info("True -> Requested Vote in Candidate state");
-            return new VoteResponse(currentTerm, true);
-        } else {
-            logger.info("False, because else -> Requested Vote in Candidate state. votedFor = {} , candidateId = {}",
-                    clusterInfo.getCurrentNode().getVotedFor(), voteRequest.candidateId());
-            return new VoteResponse(currentTerm, false);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+            if (clusterInfo.getCurrentNode().getVotedFor() == null ||
+                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+                nextState(new FollowerState(stateManager));
+                return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+            }
         }
+
+        return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override
@@ -91,6 +91,8 @@ public class CandidateState extends BaseState {
     }
 
     private void startElectionTimer() {
+        stopElectionTimer();
+
         logger.info("Starting ElectionTimer in CandidateState");
         final TimerTask startCandidateTask = new TimerTask() {
             @Override

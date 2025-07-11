@@ -11,6 +11,8 @@ public class NodeInfo {
     private final int port;
     private String votedFor = null;
     private final AtomicInteger term = new AtomicInteger(0);
+    private final AtomicInteger lastLogIndex = new AtomicInteger(0);
+    private final AtomicInteger lastLogTerm = new AtomicInteger(0);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
         this.nodeId = nodeId;
@@ -20,6 +22,14 @@ public class NodeInfo {
 
     public int getTerm() {
         return term.get();
+    }
+
+    public int getLastLogIndex() {
+        return lastLogIndex.get();
+    }
+
+    public int getLastLogTerm() {
+        return lastLogTerm.get();
     }
 
     public String getVotedFor() {
@@ -41,9 +51,9 @@ public class NodeInfo {
     public int incrementAndGet() {
         return term.incrementAndGet();
     }
-    public void voteForSelf() {
-        incrementAndGet();
+    public void voteForSelfAndIncrTerm() {
         setVotedFor(nodeId);
+        incrementAndGet();
     }
 
     public void setTerm(final int term) {

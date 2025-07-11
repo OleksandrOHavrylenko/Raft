@@ -37,6 +37,7 @@ public class LeaderState extends BaseState{
     @Override
     public AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
         logger.info("!!!Leader received Heartbeat from Leader");
+
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
             nextState(new FollowerState(stateManager));
@@ -48,25 +49,14 @@ public class LeaderState extends BaseState{
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
-        int currentTerm = clusterInfo.getCurrentNode().getTerm();
 
-        if (currentTerm > voteRequest.term()) {
-            logger.info("False -> Requested Vote in Leader state, Current term is greater than vote term");
-            return new VoteResponse(currentTerm, false);
-        } else if (currentTerm < voteRequest.term()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
+        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             nextState(new FollowerState(stateManager));
-            logger.info("True -> Requested Vote in Leader state, currentTerm < voteRequest.term()");
-            return new VoteResponse(currentTerm, true);
-        } else if (clusterInfo.getCurrentNode().getVotedFor() == null ||
-                clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
-            logger.info("True -> Requested Vote in Leader state");
-            nextState(new FollowerState(stateManager));
-            return new VoteResponse(currentTerm, true);
-        } else {
-            logger.info("False, because else-> Requested Vote in Leader state");
-            return new VoteResponse(currentTerm, false);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
+
+        return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override
