@@ -12,13 +12,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.distributed.statemanager.BaseState.HEARTBEAT_INTERVAL;
+
 /**
  * @author Oleksandr Havrylenko
  **/
 @Service("heartBeatService")
 public class HeartBeatServiceImpl implements HeartBeatService {
     private static final Logger logger = LoggerFactory.getLogger(HeartBeatServiceImpl.class);
-    public static final int HEARTBEAT_INTERVAL = 500;
 
     private final ClusterInfo clusterInfo;
     private final ScheduledExecutorService scheduledExecutor;

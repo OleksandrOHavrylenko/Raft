@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.distributed.statemanager.BaseState.VOTE_TIMEOUT_MILLIS;
+
 /**
  * @author Oleksandr Havrylenko
  **/
@@ -32,11 +34,9 @@ public class ElectionServiceImpl implements ElectionService {
         logger.info("Starting leader election");
 
 //        init with 1, because 1 vote for ourself
-        final AtomicInteger electionCounter = new AtomicInteger(1);
+        final AtomicInteger voteCounter = new AtomicInteger(1);
 
-        long timeOutMillis = 100;
-
-        VoteRequest voteRequest = new VoteRequest(
+        final VoteRequest voteRequest = new VoteRequest(
                 clusterInfo.getCurrentNode().getTerm(),
                 clusterInfo.getCurrentNode().getNodeId(),
                 clusterInfo.getCurrentNode().getLastLogIndex(),
@@ -44,10 +44,10 @@ public class ElectionServiceImpl implements ElectionService {
 
         clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> executor.submit(
-                        () -> otherNode.getGrpcClient().requestVote(voteRequest, timeOutMillis)))
-                .forEach(future -> voteResultProcessing(future, timeOutMillis + 50, electionCounter));
+                        () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS)))
+                .forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 5, voteCounter));
 
-        if (electionCounter.get() >= clusterInfo.getMajoritySize()) {
+        if (voteCounter.get() >= clusterInfo.getMajoritySize()) {
             return ElectionStatus.ELECTED;
         } else {
             return ElectionStatus.RESTART_ELECTION;
@@ -56,12 +56,12 @@ public class ElectionServiceImpl implements ElectionService {
 
     private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger electionCounter) {
         try {
-            VoteResponse voteResponse = future.get(timeOutMillis, TimeUnit.MILLISECONDS);
+            final VoteResponse voteResponse = future.get(timeOutMillis, TimeUnit.MILLISECONDS);
             if (voteResponse.voteGranted()) {
                 electionCounter.incrementAndGet();
             }
         } catch (Exception e) {
-            logger.error("Error occurred during leader election", e);
+            logger.error("Error occurred due to timeout waiting for vote from other node.", e);
         }
     }
 }

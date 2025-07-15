@@ -19,6 +19,7 @@ import java.util.TimerTask;
  **/
 public class CandidateState extends BaseState {
     private static final Logger logger = LoggerFactory.getLogger(CandidateState.class);
+
     private final State currentState = State.CANDIDATE;
     private int electionTimeoutMillis;
     private Timer electionTimer;
@@ -27,7 +28,7 @@ public class CandidateState extends BaseState {
 
     public CandidateState(final StateManager stateManager) {
         super(Objects.requireNonNull(stateManager));
-        electionTimeoutMillis = getRandomIntInRange(1500, 3000);
+        this.electionTimeoutMillis = getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
         this.electionService = Objects.requireNonNull(stateManager.getElectionService());
         this.clusterInfo = Objects.requireNonNull(stateManager.getClusterInfo());
         this.onStart();
@@ -35,7 +36,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public void onStart() {
-        logger.info("Starting CandidateState");
+        logger.info("Start --> CandidateState");
         clusterInfo.getCurrentNode().voteForSelfAndIncrTerm();
 
         final ElectionStatus electionStatus = this.electionService.startLeaderElection();
@@ -44,6 +45,7 @@ public class CandidateState extends BaseState {
             case ANOTHER_LEADER -> nextState(new FollowerState(stateManager));
             case RESTART_ELECTION -> startElectionTimer();
         }
+
     }
 
     @Override
@@ -82,7 +84,7 @@ public class CandidateState extends BaseState {
     @Override
     public void nextState(BaseState newState) {
         stopElectionTimer();
-        stateManager.setState(newState);
+        this.stateManager.setState(newState);
     }
 
     @Override
@@ -101,7 +103,7 @@ public class CandidateState extends BaseState {
             }
         };
         this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(1500, 3000));
+        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX));
     }
 
     private void stopElectionTimer() {

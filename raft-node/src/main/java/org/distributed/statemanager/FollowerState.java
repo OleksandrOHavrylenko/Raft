@@ -25,7 +25,7 @@ public class FollowerState extends BaseState {
 
     public FollowerState(final StateManager stateManager) {
         super(stateManager);
-        this.electionTimeoutMillis = getRandomIntInRange(1500, 3000);
+        this.electionTimeoutMillis = getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
         logger.debug("electionTimeoutMillis = " + this.electionTimeoutMillis);
         this.clusterInfo = Objects.requireNonNull(stateManager.getClusterInfo());
         this.onStart();
@@ -33,7 +33,7 @@ public class FollowerState extends BaseState {
 
     @Override
     public void onStart() {
-        logger.info("Starting FollowerState");
+        logger.info("Start --> FollowerState");
         startElectionTimer();
     }
 
@@ -55,6 +55,7 @@ public class FollowerState extends BaseState {
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
+        stopElectionTimer();
 
         if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
@@ -66,6 +67,7 @@ public class FollowerState extends BaseState {
             }
         }
 
+        startElectionTimer();
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
@@ -89,7 +91,7 @@ public class FollowerState extends BaseState {
             }
         };
         this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(1500, 3000));
+        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX));
     }
 
     private void stopElectionTimer() {

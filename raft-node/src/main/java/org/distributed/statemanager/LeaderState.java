@@ -24,7 +24,7 @@ public class LeaderState extends BaseState{
         super(stateManager);
         this.heartBeatService = Objects.requireNonNull(stateManager.getHeartBeatService());
         this.clusterInfo = Objects.requireNonNull(stateManager.getClusterInfo());
-        logger.info("Leader new Leader elected as NodeId: {}!", clusterInfo.getCurrentNode().getNodeId());
+        logger.info("Leader new Leader elected as NodeId: {}! with Term = {}", clusterInfo.getCurrentNode().getNodeId(), clusterInfo.getCurrentNode().getTerm());
         onStart();
     }
 
@@ -62,7 +62,7 @@ public class LeaderState extends BaseState{
     @Override
     public void nextState(BaseState newState) {
         heartBeatService.shutDownHeartBeats();
-        super.nextState(newState);
+        this.stateManager.setState(newState);
     }
 
     @Override

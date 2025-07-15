@@ -53,7 +53,7 @@ public class GrpcClientImpl implements GrpcClient {
 
     @Override
     public void asyncHeartBeat(final AppendEntriesRequest appendEntriesRequest) {
-        logger.info("HeartBeat --> sent to host: {}", this.host);
+        logger.info("HeartBeat --> sent to host: {} , with Term = {}", this.host, appendEntriesRequest.term());
 
         RequestAppendEntriesRPC heartBeatRequest = RequestAppendEntriesRPC.newBuilder()
                 .setTerm(appendEntriesRequest.term())

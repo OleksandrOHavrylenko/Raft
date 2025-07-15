@@ -12,6 +12,11 @@ import java.util.Random;
  * @author Oleksandr Havrylenko
  **/
 public abstract class BaseState {
+    public static final int ELECTION_TIMEOUT_MIN = 1500;
+    public static final int ELECTION_TIMOUT_MAX = 3000;
+    public static final int VOTE_TIMEOUT_MILLIS = 100;
+    public static final int HEARTBEAT_INTERVAL = 100;
+
     protected final StateManager stateManager;
 
     public BaseState(final StateManager stateManager) {
@@ -21,9 +26,7 @@ public abstract class BaseState {
     public abstract void onStart();
     public abstract AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
-    public void nextState(BaseState newState) {
-        this.stateManager.setState(newState);
-    }
+    public abstract void nextState(BaseState newState);
     public abstract State getCurrentState();
 
     protected int getRandomIntInRange(int min, int max) {
