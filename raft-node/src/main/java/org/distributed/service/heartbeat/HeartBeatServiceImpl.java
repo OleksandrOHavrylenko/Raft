@@ -44,7 +44,7 @@ public class HeartBeatServiceImpl implements HeartBeatService {
     }
 
     public void shutDownHeartBeats() {
-        logger.info("Shutting down HeartBeat executor.");
+        logger.info("Shutting down <-- HeartBeat executor.");
         scheduledExecutor.shutdownNow();
     }
 }

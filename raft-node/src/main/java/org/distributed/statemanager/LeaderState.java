@@ -40,7 +40,7 @@ public class LeaderState extends BaseState{
 
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
-            nextState(new FollowerState(stateManager));
+            this.nextState(new FollowerState(stateManager));
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
         } else {
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
@@ -51,8 +51,8 @@ public class LeaderState extends BaseState{
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
 
         if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
-            nextState(new FollowerState(stateManager));
+            this.clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
+            this.nextState(new FollowerState(stateManager));
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
 
@@ -61,7 +61,8 @@ public class LeaderState extends BaseState{
 
     @Override
     public void nextState(BaseState newState) {
-        heartBeatService.shutDownHeartBeats();
+        logger.info("Leader goes to nextState = {}", newState);
+        this.heartBeatService.shutDownHeartBeats();
         this.stateManager.setState(newState);
     }
 

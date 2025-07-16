@@ -58,4 +58,8 @@ public class StateManager {
     public AppendEntriesResponse onHeartbeatFromLeader (AppendEntriesRequest appendEntriesRequest) {
         return currentState.onHeartbeatFromLeader(appendEntriesRequest);
     }
+
+    public State getCurrentState() {
+        return currentState.getCurrentState();
+    }
 }
