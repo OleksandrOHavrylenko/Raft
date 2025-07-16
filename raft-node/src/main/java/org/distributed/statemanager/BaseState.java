@@ -15,7 +15,7 @@ public abstract class BaseState {
     public static final int ELECTION_TIMEOUT_MIN = 150;
     public static final int ELECTION_TIMOUT_MAX = 300;
     public static final int VOTE_TIMEOUT_MILLIS = 20;
-    public static final int HEARTBEAT_INTERVAL = 70;
+    public static final int HEARTBEAT_INTERVAL = 50;
 
     protected final StateManager stateManager;
 
@@ -24,12 +24,13 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract AppendEntriesResponse onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
+    public abstract void onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
-    public abstract void nextState(BaseState newState);
+    public abstract void nextState(State nextState);
     public abstract State getCurrentState();
+    public abstract void onStop();
 
     protected int getRandomIntInRange(int min, int max) {
-        return new Random(System.currentTimeMillis()).nextInt(min, max + 1);
+        return new Random(System.nanoTime()).nextInt(min, max + 1);
     }
 }

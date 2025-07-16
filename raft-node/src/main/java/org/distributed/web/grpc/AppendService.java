@@ -32,10 +32,10 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
         logger.info("appendEntries in gRPC server - request: {}", request);
 
         if (request.getEntriesList().isEmpty()) {
-            final AppendEntriesResponse appendEntriesResponse = stateManager.onHeartbeatFromLeader(convertTo(request));
+            stateManager.onHeartbeatFromLeader(convertTo(request));
 
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(appendEntriesResponse.term()).setSuccess(appendEntriesResponse.success()).build();
+                    .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
 
             responseObserver.onNext(response);
             responseObserver.onCompleted();

@@ -6,4 +6,6 @@ package org.distributed.service.heartbeat;
 public interface HeartBeatService {
     void startHeartBeatSchedule();
     void shutDownHeartBeats();
+//    void startHeartBeatTimer();
+//    void stopHeartBeatTimer();
 }

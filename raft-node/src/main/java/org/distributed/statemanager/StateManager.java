@@ -9,6 +9,8 @@ import org.distributed.service.election.ElectionService;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -20,46 +22,56 @@ import java.util.Objects;
 public class StateManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateManager.class);
     private BaseState currentState;
-    private final ElectionService electionService;
-    private final HeartBeatService heartBeatService;
     private final ClusterInfo clusterInfo;
+    private final BaseState followerState;
+    private final BaseState candidateState;
+    private final BaseState leaderState;
 
-    public StateManager(final ElectionService electionService, final ClusterInfo clusterInfo,
-                        final HeartBeatService heartBeatService) {
-        this.electionService = Objects.requireNonNull(electionService);
-        this.heartBeatService = Objects.requireNonNull(heartBeatService);
+    public StateManager(final ElectionService electionService, final HeartBeatService heartBeatService,
+                        final ClusterInfo clusterInfo) {
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
+        this.followerState = new FollowerState(this, this.clusterInfo);
+        this.candidateState = new CandidateState(this, electionService, this.clusterInfo);
+        this.leaderState = new LeaderState(this, heartBeatService, this.clusterInfo);
+
 
 //        Should be after clusterInfo initialization
-        this.currentState = new FollowerState(this);
+        setState(State.FOLLOWER);
         LOGGER.info("StateManager created");
     }
 
-    public void setState(final BaseState newState) {
-        this.currentState = newState;
-    }
+    public void setState(final State newState) {
+        if (this.currentState != null) {
+            this.currentState.onStop();
+        }
 
-    public ElectionService getElectionService() {
-        return electionService;
-    }
+        synchronized (this){
+            this.clusterInfo.setNodeState(newState);
+            switch (newState) {
+                case FOLLOWER -> this.currentState = followerState;
+                case CANDIDATE -> this.currentState = candidateState;
+                case LEADER -> this.currentState = leaderState;
+            }
+        }
 
-    public HeartBeatService getHeartBeatService() {
-        return heartBeatService;
-    }
-
-    public ClusterInfo getClusterInfo() {
-        return clusterInfo;
+        if (this.currentState != null) {
+            this.currentState.onStart();
+        }
     }
 
     public VoteResponse requestVote(final VoteRequest voteRequest) {
         return currentState.onRequestVote(voteRequest);
     }
 
-    public AppendEntriesResponse onHeartbeatFromLeader (AppendEntriesRequest appendEntriesRequest) {
-        return currentState.onHeartbeatFromLeader(appendEntriesRequest);
+    public void onHeartbeatFromLeader (AppendEntriesRequest appendEntriesRequest) {
+        currentState.onHeartbeatFromLeader(appendEntriesRequest);
     }
 
     public State getCurrentState() {
         return currentState.getCurrentState();
+    }
+
+    public ClusterInfo getClusterInfo () {
+        return this.clusterInfo;
     }
 }

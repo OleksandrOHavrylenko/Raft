@@ -2,6 +2,7 @@ package org.distributed.model.cluster;
 
 import org.distributed.model.ClusterNode;
 import org.distributed.model.NodeInfo;
+import org.distributed.statemanager.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ public class ClusterInfo {
 
     private final NodeInfo currentNode;
     private final List<ClusterNode> otherNodes;
+    private State nodeState;
 
     public ClusterInfo(@Value("${node.id}") String nodeId, @Value("${grpc.server.port}") int port,
                        @Value("${grpc.node1.host}") String host1, @Value("${grpc.node1.port}") int port1,
@@ -50,5 +52,11 @@ public class ClusterInfo {
         return new ArrayList<>(otherNodes);
     }
 
+    public synchronized State getNodeState() {
+        return nodeState;
+    }
 
+    public synchronized void setNodeState(final State state) {
+        this.nodeState = state;
+    }
 }
