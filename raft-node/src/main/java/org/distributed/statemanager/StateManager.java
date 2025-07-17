@@ -1,7 +1,6 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
-import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
@@ -9,8 +8,6 @@ import org.distributed.service.election.ElectionService;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
@@ -34,10 +31,8 @@ public class StateManager {
         this.candidateState = new CandidateState(this, electionService, this.clusterInfo);
         this.leaderState = new LeaderState(this, heartBeatService, this.clusterInfo);
 
-
-//        Should be after clusterInfo initialization
         setState(State.FOLLOWER);
-        LOGGER.info("StateManager created");
+        LOGGER.debug("StateManager created");
     }
 
     public void setState(final State newState) {

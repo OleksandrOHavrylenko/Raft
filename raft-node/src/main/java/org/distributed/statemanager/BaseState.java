@@ -1,7 +1,6 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
-import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 
@@ -12,10 +11,10 @@ import java.util.Random;
  * @author Oleksandr Havrylenko
  **/
 public abstract class BaseState {
-    public static final int ELECTION_TIMEOUT_MIN = 150;
-    public static final int ELECTION_TIMOUT_MAX = 300;
-    public static final int VOTE_TIMEOUT_MILLIS = 20;
-    public static final int HEARTBEAT_INTERVAL = 50;
+    public static final long ELECTION_TIMEOUT_MIN = 150;
+    public static final long ELECTION_TIMOUT_MAX = 300;
+    public static final long VOTE_TIMEOUT_MILLIS = 20;
+    public static final long HEARTBEAT_INTERVAL = 50;
 
     protected final StateManager stateManager;
 
@@ -30,7 +29,7 @@ public abstract class BaseState {
     public abstract State getCurrentState();
     public abstract void onStop();
 
-    protected int getRandomIntInRange(int min, int max) {
-        return new Random(System.nanoTime()).nextInt(min, max + 1);
+    protected long getRandomLongInRange(long min, long max) {
+        return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
 }

@@ -2,7 +2,6 @@ package org.distributed.web.grpc;
 
 import io.grpc.stub.StreamObserver;
 import org.distributed.model.appendentries.AppendEntriesRequest;
-import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.appendentries.LogEntry;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.AppendEntriesServiceGrpc;

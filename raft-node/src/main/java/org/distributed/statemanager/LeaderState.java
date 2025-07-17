@@ -23,8 +23,6 @@ public class LeaderState extends BaseState{
         super(stateManager);
         this.heartBeatService = Objects.requireNonNull(heartBeatService);;
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
-
-//        onStart();
     }
 
     @Override

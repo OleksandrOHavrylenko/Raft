@@ -20,17 +20,14 @@ public class CandidateState extends BaseState {
     private static final Logger logger = LoggerFactory.getLogger(CandidateState.class);
 
     private final State currentState = State.CANDIDATE;
-    private int electionTimeoutMillis;
     private Timer electionTimer;
     private final ElectionService electionService;
     private final ClusterInfo clusterInfo;
 
     public CandidateState(final StateManager stateManager, final ElectionService electionService, final ClusterInfo clusterInfo) {
         super(Objects.requireNonNull(stateManager));
-        this.electionTimeoutMillis = getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
         this.electionService = Objects.requireNonNull(electionService);
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
-//        this.onStart();
     }
 
     @Override
@@ -44,7 +41,6 @@ public class CandidateState extends BaseState {
             case ANOTHER_LEADER -> nextState(State.FOLLOWER);
             case RESTART_ELECTION -> startElectionTimer();
         }
-
     }
 
     @Override
@@ -102,7 +98,7 @@ public class CandidateState extends BaseState {
             }
         };
         this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, getRandomIntInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX));
+        this.electionTimer.schedule(startCandidateTask, getRandomLongInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX));
     }
 
     private void stopElectionTimer() {
