@@ -11,10 +11,11 @@ import java.util.Random;
  * @author Oleksandr Havrylenko
  **/
 public abstract class BaseState {
-    public static final long ELECTION_TIMEOUT_MIN = 150;
-    public static final long ELECTION_TIMOUT_MAX = 300;
-    public static final long VOTE_TIMEOUT_MILLIS = 20;
-    public static final long HEARTBEAT_INTERVAL = 50;
+    public static final long STARTUP_DELAY = 500L;
+    public static final long ELECTION_TIMEOUT_MIN = 150L;
+    public static final long ELECTION_TIMOUT_MAX = 300L;
+    public static final long VOTE_TIMEOUT_MILLIS = 10L;
+    public static final long HEARTBEAT_INTERVAL = 50L;
 
     protected final StateManager stateManager;
 

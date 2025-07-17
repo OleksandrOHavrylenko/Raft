@@ -4,7 +4,7 @@ package org.distributed.model.vote;
  * @author Oleksandr Havrylenko
  **/
 public record VoteResponse(
-        int term,
+        long term,
         boolean voteGranted
 ) {
 }

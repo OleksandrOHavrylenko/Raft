@@ -1,6 +1,6 @@
 package org.distributed.model;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Oleksandr Havrylenko
@@ -10,9 +10,9 @@ public class NodeInfo {
     private final String host;
     private final int port;
     private String votedFor = null;
-    private final AtomicInteger term = new AtomicInteger(0);
-    private final AtomicInteger lastLogIndex = new AtomicInteger(0);
-    private final AtomicInteger lastLogTerm = new AtomicInteger(0);
+    private final AtomicLong term = new AtomicLong(0L);
+    private final AtomicLong lastLogIndex = new AtomicLong(0L);
+    private final AtomicLong lastLogTerm = new AtomicLong(0L);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
         this.nodeId = nodeId;
@@ -20,15 +20,15 @@ public class NodeInfo {
         this.port = port;
     }
 
-    public int getTerm() {
+    public long getTerm() {
         return term.get();
     }
 
-    public int getLastLogIndex() {
+    public long getLastLogIndex() {
         return lastLogIndex.get();
     }
 
-    public int getLastLogTerm() {
+    public long getLastLogTerm() {
         return lastLogTerm.get();
     }
 
@@ -48,7 +48,7 @@ public class NodeInfo {
         return port;
     }
 
-    public int incrementAndGet() {
+    public long incrementAndGet() {
         return term.incrementAndGet();
     }
     public void voteForSelfAndIncrTerm() {
@@ -56,12 +56,12 @@ public class NodeInfo {
         incrementAndGet();
     }
 
-    public void setTerm(final int term) {
+    public void setTerm(final long term) {
         setVotedFor(null);
         this.term.set(term);
     }
 
-    public void setTerm(final int term, final String nodeId) {
+    public void setTerm(final long term, final String nodeId) {
         setVotedFor(nodeId);
         this.term.set(term);
     }

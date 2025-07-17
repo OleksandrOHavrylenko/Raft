@@ -48,7 +48,7 @@ public class ElectionServiceImpl implements ElectionService {
         clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> executor.submit(
                         () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS)))
-                .forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 5, voteCounter));
+                .forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 3L, voteCounter));
 
         if (voteCounter.get() >= clusterInfo.getMajoritySize()) {
             return ElectionStatus.ELECTED;

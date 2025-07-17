@@ -4,9 +4,9 @@ package org.distributed.model.vote;
  * @author Oleksandr Havrylenko
  **/
 public record VoteRequest(
-        int term,
+        long term,
         String candidateId,
-        int lastLogIndex,
-        int lastLogTerm
+        long lastLogIndex,
+        long lastLogTerm
 ) {
 }

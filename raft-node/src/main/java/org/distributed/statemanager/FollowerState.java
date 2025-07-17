@@ -21,23 +21,23 @@ public class FollowerState extends BaseState {
     private static final Logger logger = LoggerFactory.getLogger(FollowerState.class);
 
     private final State currentState = State.FOLLOWER;
-    private long electionTimeoutMillis;
     private final ClusterInfo clusterInfo;
     private ScheduledFuture<?> timeOutHandler;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private final Random random = new Random(System.nanoTime());
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public FollowerState(final StateManager stateManager, final ClusterInfo clusterInfo) {
         super(stateManager);
-        this.electionTimeoutMillis = getRandomLongInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
-        logger.debug("electionTimeoutMillis = " + this.electionTimeoutMillis);
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
     }
 
     @Override
     public void onStart() {
         logger.info("Start --> FollowerState");
-        startElectionTimeout();
+        long delay = 0L;
+        if (clusterInfo.getCurrentNode().getTerm() == 0L) {
+            delay = STARTUP_DELAY;
+        }
+        startElectionTimeout(delay);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FollowerState extends BaseState {
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
         }
-        startElectionTimeout();
+        startElectionTimeout(0L);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class FollowerState extends BaseState {
             }
         }
 
-        startElectionTimeout();
+        startElectionTimeout(0L);
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
@@ -83,8 +83,8 @@ public class FollowerState extends BaseState {
         stopElectionTimeout();
     }
 
-    public void startElectionTimeout() {
-        long timeout = random.nextLong(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
+    public void startElectionTimeout(long delay) {
+        long timeout = new Random(System.nanoTime()).nextLong(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX) + delay;
         logger.info("Election timer intRange = {}", timeout);
         timeOutHandler = scheduler.schedule(this::onElectionTimeout, timeout, TimeUnit.MILLISECONDS);
     }

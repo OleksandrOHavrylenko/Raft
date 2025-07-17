@@ -10,8 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Oleksandr Havrylenko
@@ -20,9 +23,10 @@ public class CandidateState extends BaseState {
     private static final Logger logger = LoggerFactory.getLogger(CandidateState.class);
 
     private final State currentState = State.CANDIDATE;
-    private Timer electionTimer;
     private final ElectionService electionService;
     private final ClusterInfo clusterInfo;
+    private ScheduledFuture<?> timeOutHandler;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public CandidateState(final StateManager stateManager, final ElectionService electionService, final ClusterInfo clusterInfo) {
         super(Objects.requireNonNull(stateManager));
@@ -39,7 +43,7 @@ public class CandidateState extends BaseState {
         switch (electionStatus) {
             case ELECTED -> nextState(State.LEADER);
             case ANOTHER_LEADER -> nextState(State.FOLLOWER);
-            case RESTART_ELECTION -> startElectionTimer();
+            case RESTART_ELECTION -> startElectionTimeout();
         }
     }
 
@@ -56,6 +60,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
+        stopElectionTimeout();
 
         if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
@@ -69,6 +74,7 @@ public class CandidateState extends BaseState {
             }
         }
 
+        startElectionTimeout();
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
@@ -84,31 +90,27 @@ public class CandidateState extends BaseState {
 
     @Override
     public void onStop() {
-        stopElectionTimer();
+        stopElectionTimeout();
     }
 
-    private void startElectionTimer() {
-        stopElectionTimer();
-
-        logger.info("Starting ElectionTimer in CandidateState");
-        final TimerTask startCandidateTask = new TimerTask() {
-            @Override
-            public void run() {
-                nextState(State.CANDIDATE);
-            }
-        };
-        this.electionTimer = new Timer();
-        this.electionTimer.schedule(startCandidateTask, getRandomLongInRange(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX));
+    public void startElectionTimeout() {
+        long timeout = new Random(System.nanoTime()).nextLong(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX);
+        logger.info("Starting ElectionTimer in CandidateState with timeout: {}",timeout);
+        timeOutHandler = scheduler.schedule(this::onElectionTimeout, timeout, TimeUnit.MILLISECONDS);
     }
-
-    private void stopElectionTimer() {
-        try {
-            if (this.electionTimer != null) {
-                this.electionTimer.cancel();
-                this.electionTimer.purge();
-            }
-        } catch (Exception e) {
-            logger.error("Error during stopping election timer", e);
+    public void stopElectionTimeout() {
+        if (timeOutHandler != null && !timeOutHandler.isDone()) {
+            timeOutHandler.cancel(false);
+            logger.info("Election timeout reset in CandidateState.");
         }
+    }
+    private void onElectionTimeout() {
+        logger.info("Time is Out Candidate --> Candidate");
+        nextState(State.CANDIDATE);
+    }
+
+    public void shutdown() {
+        logger.info("Stopping election timer in CandidateState");
+        scheduler.shutdownNow();
     }
 }

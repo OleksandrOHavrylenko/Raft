@@ -7,12 +7,12 @@ import java.util.List;
  * @author Oleksandr Havrylenko
  **/
 public record AppendEntriesRequest(
-        int term,
+        long term,
         String leaderId,
-        int prevLogIndex,
-        int prevLogTerm,
+        long prevLogIndex,
+        long prevLogTerm,
         List<LogEntry> entries,
-        int leaderCommit) {
+        long leaderCommit) {
 
 
     @Override
