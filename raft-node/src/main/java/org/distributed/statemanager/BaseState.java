@@ -1,9 +1,13 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
+import org.distributed.service.message.MessageService;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -18,14 +22,21 @@ public abstract class BaseState {
     public static final long HEARTBEAT_INTERVAL = 50L;
 
     protected final StateManager stateManager;
+    protected final MessageService messageService;
+    protected final ClusterInfo clusterInfo;
 
-    public BaseState(final StateManager stateManager) {
+    public BaseState(final StateManager stateManager, final MessageService messageService,
+                     final ClusterInfo clusterInfo) {
         this.stateManager = Objects.requireNonNull(stateManager);
+        this.messageService = Objects.requireNonNull(messageService);
+        this.clusterInfo = Objects.requireNonNull(clusterInfo);
     }
 
     public abstract void onStart();
     public abstract void onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
+    public abstract LogItem append(final String message);
+    public abstract List<String> getMessages();
     public abstract void nextState(State nextState);
     public abstract State getCurrentState();
     public abstract void onStop();

@@ -2,11 +2,14 @@ package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
+import org.distributed.service.message.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -25,8 +28,9 @@ public class FollowerState extends BaseState {
     private ScheduledFuture<?> timeOutHandler;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
-    public FollowerState(final StateManager stateManager, final ClusterInfo clusterInfo) {
-        super(stateManager);
+    public FollowerState(final StateManager stateManager, final MessageService messageService,
+                         final ClusterInfo clusterInfo) {
+        super(stateManager, messageService, clusterInfo);
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
     }
 
@@ -66,6 +70,17 @@ public class FollowerState extends BaseState {
 
         startElectionTimeout(0L);
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public LogItem append(String message) {
+        logger.info("Append denied in FollowerState, node = {}", clusterInfo.getCurrentNode().getNodeId());
+        return null;
+    }
+
+    @Override
+    public List<String> getMessages() {
+        return messageService.getMessages();
     }
 
     @Override

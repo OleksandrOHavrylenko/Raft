@@ -2,12 +2,15 @@ package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.heartbeat.HeartBeatService;
+import org.distributed.service.message.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -17,12 +20,13 @@ public class LeaderState extends BaseState{
     private static final Logger logger = LoggerFactory.getLogger(LeaderState.class);
     private final State currentState = State.LEADER;
     private final HeartBeatService heartBeatService;
-    private final ClusterInfo clusterInfo;
+    private final MessageService messageService;
 
-    public LeaderState(final StateManager stateManager, final HeartBeatService heartBeatService, final ClusterInfo clusterInfo) {
-        super(stateManager);
-        this.heartBeatService = Objects.requireNonNull(heartBeatService);;
-        this.clusterInfo = Objects.requireNonNull(clusterInfo);
+    public LeaderState(final StateManager stateManager, final HeartBeatService heartBeatService,
+                       final MessageService messageService, final ClusterInfo clusterInfo) {
+        super(stateManager, messageService, clusterInfo);
+        this.heartBeatService = Objects.requireNonNull(heartBeatService);
+        this.messageService = Objects.requireNonNull(messageService);
     }
 
     @Override
@@ -53,6 +57,16 @@ public class LeaderState extends BaseState{
         }
 
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public LogItem append(String message) {
+        return messageService.append(message);
+    }
+
+    @Override
+    public List<String> getMessages() {
+        return messageService.getMessages();
     }
 
     @Override

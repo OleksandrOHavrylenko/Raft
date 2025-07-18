@@ -2,14 +2,17 @@ package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
+import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.heartbeat.HeartBeatService;
+import org.distributed.service.message.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -25,11 +28,11 @@ public class StateManager {
     private final BaseState leaderState;
 
     public StateManager(final ElectionService electionService, final HeartBeatService heartBeatService,
-                        final ClusterInfo clusterInfo) {
+                        final MessageService messageService, final ClusterInfo clusterInfo) {
         this.clusterInfo = Objects.requireNonNull(clusterInfo);
-        this.followerState = new FollowerState(this, this.clusterInfo);
-        this.candidateState = new CandidateState(this, electionService, this.clusterInfo);
-        this.leaderState = new LeaderState(this, heartBeatService, this.clusterInfo);
+        this.followerState = new FollowerState(this, messageService, this.clusterInfo);
+        this.candidateState = new CandidateState(this, electionService, messageService, this.clusterInfo);
+        this.leaderState = new LeaderState(this, heartBeatService, messageService, this.clusterInfo);
 
         setState(State.FOLLOWER);
         LOGGER.debug("StateManager created");
@@ -68,5 +71,13 @@ public class StateManager {
 
     public ClusterInfo getClusterInfo () {
         return this.clusterInfo;
+    }
+
+    public List<String> getMessages() {
+        return this.currentState.getMessages();
+    }
+
+    public LogItem append(final String message) {
+        return this.currentState.append(message);
     }
 }
