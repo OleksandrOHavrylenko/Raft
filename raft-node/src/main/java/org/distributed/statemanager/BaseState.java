@@ -1,6 +1,7 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
@@ -15,7 +16,7 @@ import java.util.Random;
  * @author Oleksandr Havrylenko
  **/
 public abstract class BaseState {
-    public static final long STARTUP_DELAY = 500L;
+    public static final long STARTUP_DELAY = 7000L;
     public static final long ELECTION_TIMEOUT_MIN = 150L;
     public static final long ELECTION_TIMOUT_MAX = 300L;
     public static final long VOTE_TIMEOUT_MILLIS = 10L;
@@ -33,7 +34,8 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract void onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest);
+    public abstract void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest);
+    public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public abstract LogItem append(final String message);
     public abstract List<String> getMessages();

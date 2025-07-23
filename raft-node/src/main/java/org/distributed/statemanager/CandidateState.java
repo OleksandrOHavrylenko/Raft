@@ -2,6 +2,7 @@ package org.distributed.statemanager;
 
 import org.distributed.model.ElectionStatus;
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
@@ -52,14 +53,18 @@ public class CandidateState extends BaseState {
     }
 
     @Override
-    public void onHeartbeatFromLeader(final AppendEntriesRequest appendEntriesRequest) {
+    public void onHeartbeatRequest(final AppendEntriesRequest appendEntriesRequest) {
         logger.info("Heartbeat from Leader in CandidateState");
-        if (appendEntriesRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
-            nextState(State.FOLLOWER);
-        } else if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+        if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+            stopElectionTimeout();
             nextState(State.FOLLOWER);
         }
+    }
+
+    @Override
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+        logger.info("Nothing to do in CandidateState");
     }
 
     @Override
@@ -70,12 +75,6 @@ public class CandidateState extends BaseState {
             clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             nextState(State.FOLLOWER);
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
-        } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
-            if (clusterInfo.getCurrentNode().getVotedFor() == null ||
-                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
-                nextState(State.FOLLOWER);
-                return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
-            }
         }
 
         startElectionTimeout();
@@ -95,6 +94,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public void nextState(State nextState) {
+        electionService.stopLeaderElection();
         this.stateManager.setState(nextState);
     }
 

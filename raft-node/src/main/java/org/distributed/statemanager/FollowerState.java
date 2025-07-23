@@ -1,6 +1,7 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
@@ -45,13 +46,18 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public void onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
+    public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
         logger.info("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
         }
         startElectionTimeout(0L);
+    }
+
+    @Override
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+        logger.info("Nothing to do in FollowerState");
     }
 
     @Override
@@ -64,6 +70,7 @@ public class FollowerState extends BaseState {
         } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
             if (clusterInfo.getCurrentNode().getVotedFor() == null ||
                     clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+                clusterInfo.getCurrentNode().setVotedFor(voteRequest.candidateId());
                 return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
             }
         }

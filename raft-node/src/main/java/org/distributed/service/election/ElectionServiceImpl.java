@@ -8,11 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.distributed.statemanager.BaseState.VOTE_TIMEOUT_MILLIS;
@@ -25,6 +23,7 @@ public class ElectionServiceImpl implements ElectionService {
     private static final Logger logger = LoggerFactory.getLogger(ElectionServiceImpl.class);
 
     private final ClusterInfo clusterInfo;
+    private List<Future<VoteResponse>> voteTimeOutHandler;
     private final ExecutorService executor;
 
     public ElectionServiceImpl(final ClusterInfo clusterInfo) {
@@ -45,26 +44,39 @@ public class ElectionServiceImpl implements ElectionService {
                 clusterInfo.getCurrentNode().getLastLogIndex(),
                 clusterInfo.getCurrentNode().getLastLogTerm());
 
-        clusterInfo.getOtherNodes().stream()
+        this.voteTimeOutHandler = clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> executor.submit(
-                        () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS)))
-                .forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 3L, voteCounter));
+                        () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS))).toList();
+
+        this.voteTimeOutHandler.forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 10L, voteCounter));
 
         if (voteCounter.get() >= clusterInfo.getMajoritySize()) {
+            logger.info("Leader election --> voteThis = {}", voteCounter.get());
             return ElectionStatus.ELECTED;
         } else {
-            return ElectionStatus.RESTART_ELECTION;
+            return ElectionStatus.ANOTHER_LEADER;
         }
     }
 
-    private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger electionCounter) {
+    private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger voteThis) {
         try {
             final VoteResponse voteResponse = future.get(timeOutMillis, TimeUnit.MILLISECONDS);
-            if (voteResponse.voteGranted()) {
-                electionCounter.incrementAndGet();
+            if (voteResponse != null) {
+                if (voteResponse.voteGranted()) {
+                    voteThis.incrementAndGet();
+                }
             }
         } catch (Exception e) {
-            logger.error("Error occurred due to timeout waiting for vote from other node.", e);
+            logger.error("Error --> occurred due to timeout waiting for vote from other node.", e);
         }
+    }
+
+    @Override
+    public void stopLeaderElection() {
+        logger.info("Stopping leader election");
+        this.voteTimeOutHandler.stream()
+                .filter(Objects::nonNull)
+                .filter(future -> !future.isDone())
+                .forEach(future -> future.cancel(true));
     }
 }

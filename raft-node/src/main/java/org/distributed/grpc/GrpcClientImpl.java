@@ -5,23 +5,32 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
+import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+
+import static org.distributed.statemanager.BaseState.HEARTBEAT_INTERVAL;
 
 /**
  * @author Oleksandr Havrylenko
  **/
+@Configurable
 public class GrpcClientImpl implements GrpcClient {
     private static final Logger logger = LoggerFactory.getLogger(GrpcClientImpl.class);
     private String host;
     private final ManagedChannel channel;
     private VoteServiceGrpc.VoteServiceBlockingStub voteBlockingStub;
     private AppendEntriesServiceGrpc.AppendEntriesServiceStub asyncAppendEntriesStub;
+    private StateManager stateManager;
 
     public GrpcClientImpl(final String host, final int port) {
         this.host = host;
@@ -41,7 +50,8 @@ public class GrpcClientImpl implements GrpcClient {
 
         ResponseVoteRPC responseVoteRPC;
         try {
-            responseVoteRPC = voteBlockingStub.withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
+            responseVoteRPC = voteBlockingStub
+                    .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
                     .requestVote(request);
         } catch (StatusRuntimeException e) {
             logger.warn("RPC requestVote to host: {} - failed: {}", this.host, e.getStatus());
@@ -64,6 +74,9 @@ public class GrpcClientImpl implements GrpcClient {
             @Override
             public void onNext(ResponseAppendEntriesRPC value) {
                 logger.info("Response for HeatBeat: {} in onNext", value);
+                AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
+                stateManager.onHeartBeatResponse(response);
+
             }
 
             @Override
@@ -76,6 +89,11 @@ public class GrpcClientImpl implements GrpcClient {
                 logger.info("HeartBeat to host: {} successful", host);
             }
         };
-        asyncAppendEntriesStub.appendEntries(heartBeatRequest, responseObserver);
+        asyncAppendEntriesStub.withDeadlineAfter(HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS).appendEntries(heartBeatRequest, responseObserver);
+    }
+
+    @Autowired
+    public void setStateManager(final StateManager stateManager) {
+        this.stateManager = Objects.requireNonNull(stateManager);
     }
 }

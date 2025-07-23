@@ -7,4 +7,5 @@ import org.distributed.model.ElectionStatus;
  **/
 public interface ElectionService {
     ElectionStatus startLeaderElection();
+    void stopLeaderElection();
 }

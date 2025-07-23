@@ -40,7 +40,7 @@ public class HeartBeatServiceImpl implements HeartBeatService {
                         clusterInfo.getCurrentNode().getTerm(), clusterInfo.getCurrentNode().getNodeId(),
                         clusterInfo.getCurrentNode().getLastLogIndex(), clusterInfo.getCurrentNode().getLastLogTerm(), List.of(), 0);
         scheduledHeartBeatHandler = clusterInfo.getOtherNodes().stream()
-                .map(otherNode -> scheduledExecutor.scheduleAtFixedRate(
+                .map(otherNode -> scheduledExecutor.scheduleWithFixedDelay(
                         () -> otherNode.getGrpcClient().asyncHeartBeat(request), 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS)).toList();
     }
 
@@ -49,7 +49,7 @@ public class HeartBeatServiceImpl implements HeartBeatService {
         logger.info("Shutting down <-- HeartBeat executor.");
         scheduledHeartBeatHandler.stream()
                 .filter(Objects::nonNull)
-                .filter(task -> !task.isDone())
-                .forEach(task -> task.cancel(true));
+                .filter(future -> !future.isDone())
+                .forEach(future -> future.cancel(true));
     }
 }

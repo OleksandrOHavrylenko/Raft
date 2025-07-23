@@ -1,6 +1,7 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
@@ -36,12 +37,21 @@ public class LeaderState extends BaseState{
     }
 
     @Override
-    public void onHeartbeatFromLeader(AppendEntriesRequest appendEntriesRequest) {
+    public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
         logger.info("!!!Leader received Heartbeat from Leader");
 
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
             this.heartBeatService.shutDownHeartBeats();
+            clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+            this.nextState(State.FOLLOWER);
+        }
+    }
+
+    @Override
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+        if (appendEntriesResponse.term() > clusterInfo.getCurrentNode().getTerm()) {
+            this.heartBeatService.shutDownHeartBeats();
+            clusterInfo.getCurrentNode().setTerm(appendEntriesResponse.term());
             this.nextState(State.FOLLOWER);
         }
     }

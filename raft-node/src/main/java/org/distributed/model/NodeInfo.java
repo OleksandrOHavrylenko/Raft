@@ -57,11 +57,10 @@ public class NodeInfo {
     }
 
     public void setTerm(final long term) {
-        setVotedFor(null);
-        this.term.set(term);
+        setTerm(term, null);
     }
 
-    public void setTerm(final long term, final String nodeId) {
+    public synchronized void setTerm(final long term, final String nodeId) {
         setVotedFor(nodeId);
         this.term.set(term);
     }
