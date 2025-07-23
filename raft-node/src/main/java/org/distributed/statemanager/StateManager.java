@@ -87,7 +87,7 @@ public class StateManager {
         return this.currentState.append(message);
     }
 
-    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+    public void onReplicateRequest(final AppendEntriesRequest request) {
         this.currentState.onReplicateRequest(request);
     }
 }

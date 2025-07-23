@@ -37,8 +37,12 @@ public class HeartBeatServiceImpl implements HeartBeatService {
 
         final AppendEntriesRequest request =
                 new AppendEntriesRequest(
-                        clusterInfo.getCurrentNode().getTerm(), clusterInfo.getCurrentNode().getNodeId(),
-                        clusterInfo.getCurrentNode().getLastLogIndex(), clusterInfo.getCurrentNode().getLastLogTerm(), List.of(), 0);
+                        clusterInfo.getCurrentNode().getTerm(),
+                        clusterInfo.getCurrentNode().getNodeId(),
+                        clusterInfo.getCurrentNode().getLastLogIndex(),
+                        clusterInfo.getCurrentNode().getLastLogTerm(),
+                        List.of(),
+                        clusterInfo.getCurrentNode().getLeaderCommit());
         scheduledHeartBeatHandler = clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> scheduledExecutor.scheduleWithFixedDelay(
                         () -> otherNode.getGrpcClient().asyncHeartBeat(request), 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS)).toList();

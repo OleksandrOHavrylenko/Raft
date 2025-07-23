@@ -50,7 +50,7 @@ public class MessageServiceImpl implements MessageService {
                             clusterInfo.getCurrentNode().getLastLogIndex(),
                             clusterInfo.getCurrentNode().getLastLogTerm(),
                             List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
-                            logItem.id() - 1);
+                            clusterInfo.getCurrentNode().getLeaderCommit());
             executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, true));
         }
         try {
@@ -58,7 +58,7 @@ public class MessageServiceImpl implements MessageService {
         } catch (InterruptedException e) {
             logger.info("RuntimeException occurred while replication", e);
         }
-        IdGenerator.setCommitCounter(id);
+        IdGenerator.setLeaderCommit(id);
         return logItem;
     }
 

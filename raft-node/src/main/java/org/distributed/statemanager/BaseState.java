@@ -48,5 +48,5 @@ public abstract class BaseState {
         return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
 
-    public abstract void onReplicateRequest(RequestAppendEntriesRPC request);
+    public abstract void onReplicateRequest(final AppendEntriesRequest request);
 }

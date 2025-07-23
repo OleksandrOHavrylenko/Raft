@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 public class IdGenerator {
     private final static AtomicInteger counter = new AtomicInteger(0);
-    private final static AtomicInteger commitCounter = new AtomicInteger(0);
+    private final static AtomicInteger leaderCommit = new AtomicInteger(0);
 
     public static int id() {
         return counter.getAndIncrement();
@@ -17,12 +17,12 @@ public class IdGenerator {
         return counter.get();
     }
 
-    public static int getCommitCounter() {
-        return commitCounter.get();
+    public static int getLeaderCommit() {
+        return leaderCommit.get();
     }
 
-    public static void setCommitCounter(int commit) {
-        commitCounter.set(commit);
+    public static void setLeaderCommit(int commit) {
+        leaderCommit.set(commit);
     }
 
 

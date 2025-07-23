@@ -1,5 +1,7 @@
 package org.distributed.model;
 
+import org.distributed.util.IdGenerator;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -74,6 +76,10 @@ public class NodeInfo {
     public synchronized void setTerm(final long term, final String nodeId) {
         setVotedFor(nodeId);
         this.term.set(term);
+    }
+
+    public int getLeaderCommit() {
+        return IdGenerator.getLeaderCommit();
     }
 
     public String getNodeId() {

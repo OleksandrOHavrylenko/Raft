@@ -9,6 +9,7 @@ import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.distributed.service.message.MessageService;
 import org.distributed.stubs.RequestAppendEntriesRPC;
+import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,9 @@ public class LeaderState extends BaseState{
     @Override
     public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
         logger.debug("!!!Leader received Heartbeat from Leader");
+        if (clusterInfo.getCurrentNode().getLeaderCommit() < appendEntriesRequest.leaderCommit()) {
+            IdGenerator.setLeaderCommit(appendEntriesRequest.leaderCommit());
+        }
 
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             this.heartBeatService.shutDownHeartBeats();
@@ -71,7 +75,7 @@ public class LeaderState extends BaseState{
     }
 
     @Override
-    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+    public void onReplicateRequest(final AppendEntriesRequest request) {
         logger.info("Leader --> received ReplicateRequest from Leader, nothing to do");
     }
 

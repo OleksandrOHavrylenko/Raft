@@ -39,7 +39,7 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         } else {
-            stateManager.onReplicateRequest(request);
+            stateManager.onReplicateRequest(convertTo(request));
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
                     .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
 

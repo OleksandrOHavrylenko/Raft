@@ -51,6 +51,9 @@ public class FollowerState extends BaseState {
     public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
         logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
+        if (clusterInfo.getCurrentNode().getLeaderCommit() < appendEntriesRequest.leaderCommit()) {
+            IdGenerator.setLeaderCommit(appendEntriesRequest.leaderCommit());
+        }
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
         }
@@ -82,13 +85,13 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+    public void onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        final int id = IdGenerator.id();
-        request.getEntriesList().stream()
-                .map(entry -> new LogItem(entry.getIndex(), entry.getCommand(), entry.getTerm()))
+        IdGenerator.id();
+        request.entries().stream()
+                .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
                 .findFirst().ifPresent((messageService::saveMessages));
-        IdGenerator.setCommitCounter(request.getLeaderCommit());
+        IdGenerator.setLeaderCommit(request.leaderCommit());
         startElectionTimeout(0L);
     }
 
