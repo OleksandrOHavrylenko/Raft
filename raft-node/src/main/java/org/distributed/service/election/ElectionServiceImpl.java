@@ -37,6 +37,7 @@ public class ElectionServiceImpl implements ElectionService {
 
 //        init with 1, because 1 vote for ourself
         final AtomicInteger voteCounter = new AtomicInteger(1);
+        final AtomicInteger errorsDuringElection = new AtomicInteger(0);
 
         final VoteRequest voteRequest = new VoteRequest(
                 clusterInfo.getCurrentNode().getTerm(),
@@ -48,17 +49,19 @@ public class ElectionServiceImpl implements ElectionService {
                 .map(otherNode -> executor.submit(
                         () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS))).toList();
 
-        this.voteTimeOutHandler.forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 10L, voteCounter));
+        this.voteTimeOutHandler.forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 1L, voteCounter, errorsDuringElection));
 
         if (voteCounter.get() >= clusterInfo.getMajoritySize()) {
             logger.info("Leader election --> voteThis = {}", voteCounter.get());
             return ElectionStatus.ELECTED;
+        } else if(errorsDuringElection.get() == clusterInfo.getOtherNodeCount()) {
+            return ElectionStatus.RESTART_ELECTION;
         } else {
             return ElectionStatus.ANOTHER_LEADER;
         }
     }
 
-    private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger voteThis) {
+    private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger voteThis, AtomicInteger errorsDuringElection) {
         try {
             final VoteResponse voteResponse = future.get(timeOutMillis, TimeUnit.MILLISECONDS);
             if (voteResponse != null) {
@@ -67,6 +70,7 @@ public class ElectionServiceImpl implements ElectionService {
                 }
             }
         } catch (Exception e) {
+            errorsDuringElection.incrementAndGet();
             logger.error("Error --> occurred due to timeout waiting for vote from other node.", e);
         }
     }
