@@ -49,7 +49,7 @@ public class MessageServiceImpl implements MessageService {
                             clusterInfo.getCurrentNode().getNodeId(),
                             clusterInfo.getCurrentNode().getLastLogIndex(),
                             clusterInfo.getCurrentNode().getLastLogTerm(),
-                            List.of(new LogEntry(logItem.term(), logItem.message())),
+                            List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
                             logItem.id() - 1);
             executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, true));
         }

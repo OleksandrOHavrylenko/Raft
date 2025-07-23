@@ -98,6 +98,7 @@ public class GrpcClientImpl implements GrpcClient {
     public void asyncReplicateLog(AppendEntriesRequest request, CountDownLatch writeConcernLatch, boolean waitForReady) {
         List<RequestAppendEntriesRPC.LogEntry> logEntries = request.entries().stream()
                 .map(item -> RequestAppendEntriesRPC.LogEntry.newBuilder()
+                        .setIndex(item.index())
                         .setTerm(item.term())
                         .setCommand(item.command())
                         .build())

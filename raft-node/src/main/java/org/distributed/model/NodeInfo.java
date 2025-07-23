@@ -1,5 +1,6 @@
 package org.distributed.model;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -11,9 +12,9 @@ public class NodeInfo {
     private final int port;
     private String votedFor = null;
     private final AtomicLong term = new AtomicLong(0L);
-    private final AtomicLong lastLogIndex = new AtomicLong(0L);
+    private final AtomicInteger lastLogIndex = new AtomicInteger(0);
     private final AtomicLong lastLogTerm = new AtomicLong(0L);
-    private final AtomicLong nextLogIndex = new AtomicLong(1L);
+    private final AtomicInteger nextLogIndex = new AtomicInteger(1);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
         this.nodeId = nodeId;
@@ -25,7 +26,7 @@ public class NodeInfo {
         return term.get();
     }
 
-    public long getLastLogIndex() {
+    public int getLastLogIndex() {
         return lastLogIndex.get();
     }
 
@@ -53,11 +54,11 @@ public class NodeInfo {
         return term.incrementAndGet();
     }
 
-    public long getNextLogIndex() {
+    public int getNextLogIndex() {
         return nextLogIndex.get();
     }
 
-    public void setNextLogIndex(final long index) {
+    public void setNextLogIndex(final int index) {
         nextLogIndex.set(index);
     }
 

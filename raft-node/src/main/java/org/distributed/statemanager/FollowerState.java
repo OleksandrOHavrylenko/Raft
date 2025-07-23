@@ -86,9 +86,9 @@ public class FollowerState extends BaseState {
         stopElectionTimeout();
         final int id = IdGenerator.id();
         request.getEntriesList().stream()
-                .map(entry -> new LogItem(id, entry.getCommand(), entry.getTerm()))
+                .map(entry -> new LogItem(entry.getIndex(), entry.getCommand(), entry.getTerm()))
                 .findFirst().ifPresent((messageService::saveMessages));
-        IdGenerator.setCommitCounter(id);
+        IdGenerator.setCommitCounter(request.getLeaderCommit());
         startElectionTimeout(0L);
     }
 

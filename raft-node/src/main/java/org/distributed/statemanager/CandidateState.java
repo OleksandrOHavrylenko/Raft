@@ -88,9 +88,8 @@ public class CandidateState extends BaseState {
         stopElectionTimeout();
         final int id = IdGenerator.id();
         request.getEntriesList().stream()
-                .map(entry -> new LogItem(id, entry.getCommand(), entry.getTerm()))
+                .map(entry -> new LogItem(entry.getIndex(), entry.getCommand(), entry.getTerm()))
                 .findFirst().ifPresent((messageService::saveMessages));
-        IdGenerator.id();
         IdGenerator.setCommitCounter(id);
         startElectionTimeout();
     }

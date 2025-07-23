@@ -9,10 +9,10 @@ import java.util.List;
 public record AppendEntriesRequest(
         long term,
         String leaderId,
-        long prevLogIndex,
+        int prevLogIndex,
         long prevLogTerm,
         List<LogEntry> entries,
-        long leaderCommit) {
+        int leaderCommit) {
 
 
     @Override

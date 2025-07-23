@@ -51,7 +51,7 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
     private AppendEntriesRequest convertTo(RequestAppendEntriesRPC request) {
         return new AppendEntriesRequest(request.getTerm(), request.getLeaderId(), request.getPrevLogIndex(),
                 request.getPrevLogTerm(),
-                request.getEntriesList().stream().map(v -> new LogEntry(v.getTerm(), v.getCommand())).toList(),
+                request.getEntriesList().stream().map(v -> new LogEntry(v.getIndex(), v.getTerm(), v.getCommand())).toList(),
                 request.getLeaderCommit());
     }
 }

@@ -6,7 +6,7 @@ package org.distributed.model.vote;
 public record VoteRequest(
         long term,
         String candidateId,
-        long lastLogIndex,
+        int lastLogIndex,
         long lastLogTerm
 ) {
 }
