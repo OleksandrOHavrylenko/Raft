@@ -10,10 +10,10 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.*;
+import org.distributed.util.SpringContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -23,14 +23,12 @@ import static org.distributed.statemanager.BaseState.HEARTBEAT_INTERVAL;
 /**
  * @author Oleksandr Havrylenko
  **/
-@Configurable
 public class GrpcClientImpl implements GrpcClient {
     private static final Logger logger = LoggerFactory.getLogger(GrpcClientImpl.class);
     private String host;
     private final ManagedChannel channel;
     private VoteServiceGrpc.VoteServiceBlockingStub voteBlockingStub;
     private AppendEntriesServiceGrpc.AppendEntriesServiceStub asyncAppendEntriesStub;
-    private StateManager stateManager;
 
     public GrpcClientImpl(final String host, final int port) {
         this.host = host;
@@ -75,6 +73,8 @@ public class GrpcClientImpl implements GrpcClient {
             public void onNext(ResponseAppendEntriesRPC value) {
                 logger.info("Response for HeatBeat: {} in onNext", value);
                 AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
+
+                StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
                 stateManager.onHeartBeatResponse(response);
 
             }
@@ -90,10 +90,5 @@ public class GrpcClientImpl implements GrpcClient {
             }
         };
         asyncAppendEntriesStub.withDeadlineAfter(HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS).appendEntries(heartBeatRequest, responseObserver);
-    }
-
-    @Autowired
-    public void setStateManager(final StateManager stateManager) {
-        this.stateManager = Objects.requireNonNull(stateManager);
     }
 }
