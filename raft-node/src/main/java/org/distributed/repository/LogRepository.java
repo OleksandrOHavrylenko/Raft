@@ -23,6 +23,7 @@ public class LogRepository {
     }
 
     public List<String> getAll(int maxIndex) {
+        log.info("Get all messages from 0 - {}", maxIndex);
         return Arrays.stream(logsRepository, 0, maxIndex).map(LogItem::message).toList();
     }
 }

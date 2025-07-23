@@ -7,6 +7,7 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.RequestAppendEntriesRPC;
 
 import java.util.List;
 import java.util.Objects;
@@ -46,4 +47,6 @@ public abstract class BaseState {
     protected long getRandomLongInRange(long min, long max) {
         return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
+
+    public abstract void onReplicateRequest(RequestAppendEntriesRPC request);
 }

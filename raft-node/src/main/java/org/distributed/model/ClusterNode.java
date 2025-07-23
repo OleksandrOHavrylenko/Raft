@@ -2,8 +2,12 @@ package org.distributed.model;
 
 import org.distributed.grpc.GrpcClient;
 import org.distributed.grpc.GrpcClientImpl;
+import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.dto.LogItem;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author Oleksandr Havrylenko
@@ -24,6 +28,10 @@ public class ClusterNode {
 
     public GrpcClient getGrpcClient() {
         return grpcClient;
+    }
+
+    public void asyncSendMessage(final AppendEntriesRequest appendEntriesRequest, final CountDownLatch replicationDone, boolean waitForReady) {
+        this.grpcClient.asyncReplicateLog(appendEntriesRequest, replicationDone, waitForReady);
     }
 
     @Override

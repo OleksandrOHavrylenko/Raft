@@ -7,6 +7,8 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.RequestAppendEntriesRPC;
+import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,7 @@ public class FollowerState extends BaseState {
 
     @Override
     public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
-        logger.info("Heartbeat from leader received in FollowerState");
+        logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
@@ -57,7 +59,7 @@ public class FollowerState extends BaseState {
 
     @Override
     public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
-        logger.info("Nothing to do in FollowerState");
+        logger.debug("Nothing to do in FollowerState");
     }
 
     @Override
@@ -77,6 +79,17 @@ public class FollowerState extends BaseState {
 
         startElectionTimeout(0L);
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+        stopElectionTimeout();
+        final int id = IdGenerator.id();
+        request.getEntriesList().stream()
+                .map(entry -> new LogItem(id, entry.getCommand(), entry.getTerm()))
+                .findFirst().ifPresent((messageService::saveMessages));
+        IdGenerator.setCommitCounter(id);
+        startElectionTimeout(0L);
     }
 
     @Override
@@ -107,14 +120,14 @@ public class FollowerState extends BaseState {
 
     public void startElectionTimeout(long delay) {
         long timeout = new Random(System.nanoTime()).nextLong(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX) + delay;
-        logger.info("Election timer intRange = {}", timeout);
+        logger.debug("Election timer intRange = {}", timeout);
         timeOutHandler = scheduler.schedule(this::onElectionTimeout, timeout, TimeUnit.MILLISECONDS);
     }
     public void stopElectionTimeout() {
-        logger.info("Trying to reset election timeout ...");
+        logger.debug("Trying to reset election timeout ...");
         if (timeOutHandler != null && !timeOutHandler.isDone()) {
             timeOutHandler.cancel(false);
-            logger.info("Election timeout reset.");
+            logger.debug("Election timeout reset.");
         }
     }
     private void onElectionTimeout() {

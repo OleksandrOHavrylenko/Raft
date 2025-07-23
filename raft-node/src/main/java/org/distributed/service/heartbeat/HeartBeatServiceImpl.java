@@ -33,7 +33,7 @@ public class HeartBeatServiceImpl implements HeartBeatService {
 
     @Override
     public void startHeartBeatSchedule() {
-        logger.info("Starting HeartBeat scheduling");
+        logger.debug("Starting HeartBeat scheduling");
 
         final AppendEntriesRequest request =
                 new AppendEntriesRequest(

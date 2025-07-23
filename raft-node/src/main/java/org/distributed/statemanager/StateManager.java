@@ -9,6 +9,7 @@ import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.RequestAppendEntriesRPC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -84,5 +85,9 @@ public class StateManager {
 
     public LogItem append(final String message) {
         return this.currentState.append(message);
+    }
+
+    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+        this.currentState.onReplicateRequest(request);
     }
 }

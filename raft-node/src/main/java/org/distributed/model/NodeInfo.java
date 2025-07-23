@@ -13,6 +13,7 @@ public class NodeInfo {
     private final AtomicLong term = new AtomicLong(0L);
     private final AtomicLong lastLogIndex = new AtomicLong(0L);
     private final AtomicLong lastLogTerm = new AtomicLong(0L);
+    private final AtomicLong nextLogIndex = new AtomicLong(1L);
 
     public NodeInfo(final String nodeId, final String host, final int port) {
         this.nodeId = nodeId;
@@ -51,6 +52,15 @@ public class NodeInfo {
     public long incrementAndGet() {
         return term.incrementAndGet();
     }
+
+    public long getNextLogIndex() {
+        return nextLogIndex.get();
+    }
+
+    public void setNextLogIndex(final long index) {
+        nextLogIndex.set(index);
+    }
+
     public void voteForSelfAndIncrTerm() {
         setVotedFor(nodeId);
         incrementAndGet();
@@ -78,6 +88,4 @@ public class NodeInfo {
                 ", term=" + term +
                 '}';
     }
-
-
 }

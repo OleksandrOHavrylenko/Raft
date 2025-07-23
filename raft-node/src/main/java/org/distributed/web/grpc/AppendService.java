@@ -28,11 +28,18 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
 
     @Override
     public void appendEntries(RequestAppendEntriesRPC request, StreamObserver<ResponseAppendEntriesRPC> responseObserver) {
-        logger.info("appendEntries in gRPC server - request: {}", request);
+        logger.debug("appendEntries in gRPC server - request: {}", request);
 
         if (request.getEntriesList().isEmpty()) {
             stateManager.onHeartBeatRequest(convertTo(request));
 
+            ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
+                    .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } else {
+            stateManager.onReplicateRequest(request);
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
                     .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
 

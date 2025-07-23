@@ -2,6 +2,7 @@ package org.distributed.grpc;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.distributed.model.appendentries.AppendEntriesRequest;
@@ -13,9 +14,10 @@ import org.distributed.stubs.*;
 import org.distributed.util.SpringContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.distributed.statemanager.BaseState.HEARTBEAT_INTERVAL;
@@ -61,7 +63,7 @@ public class GrpcClientImpl implements GrpcClient {
 
     @Override
     public void asyncHeartBeat(final AppendEntriesRequest appendEntriesRequest) {
-        logger.info("HeartBeat --> sent to host: {} , with Term = {}", this.host, appendEntriesRequest.term());
+        logger.debug("HeartBeat --> sent to host: {} , with Term = {}", this.host, appendEntriesRequest.term());
 
         RequestAppendEntriesRPC heartBeatRequest = RequestAppendEntriesRPC.newBuilder()
                 .setTerm(appendEntriesRequest.term())
@@ -71,7 +73,7 @@ public class GrpcClientImpl implements GrpcClient {
 
             @Override
             public void onNext(ResponseAppendEntriesRPC value) {
-                logger.info("Response for HeatBeat: {} in onNext", value);
+                logger.debug("Response for HeatBeat: {} in onNext", value);
                 AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
 
                 StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
@@ -81,14 +83,62 @@ public class GrpcClientImpl implements GrpcClient {
 
             @Override
             public void onError(Throwable t) {
-                logger.warn("HeartBeat to host: {} - failed", host, t);
+                logger.error("HeartBeat to host: {} - failed", host, t);
             }
 
             @Override
             public void onCompleted() {
-                logger.info("HeartBeat to host: {} successful", host);
+                logger.debug("HeartBeat to host: {} successful", host);
             }
         };
         asyncAppendEntriesStub.withDeadlineAfter(HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS).appendEntries(heartBeatRequest, responseObserver);
+    }
+
+    @Override
+    public void asyncReplicateLog(AppendEntriesRequest request, CountDownLatch writeConcernLatch, boolean waitForReady) {
+        List<RequestAppendEntriesRPC.LogEntry> logEntries = request.entries().stream()
+                .map(item -> RequestAppendEntriesRPC.LogEntry.newBuilder()
+                        .setTerm(item.term())
+                        .setCommand(item.command())
+                        .build())
+                .toList();
+
+        RequestAppendEntriesRPC.Builder builder = RequestAppendEntriesRPC.newBuilder();
+        logEntries.forEach(builder::addEntries);
+        builder.setTerm(request.term())
+                .setLeaderId(request.leaderId())
+                .setPrevLogIndex(request.prevLogIndex())
+                .setTerm(request.prevLogTerm())
+                .setLeaderCommit(request.leaderCommit());
+        RequestAppendEntriesRPC requestRpc = builder.build();
+
+        StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {
+
+            @Override
+            public void onNext(ResponseAppendEntriesRPC value) {
+                logger.info("Response from : {} node: {}", host, value);
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                logger.error("Replication of LogEntry to {}: Failed: {}", host, Status.fromThrowable(t));
+                if(writeConcernLatch != null) {
+                    writeConcernLatch.countDown();
+                }
+            }
+
+            @Override
+            public void onCompleted() {
+                logger.info("Replication of items to {}: Completed", host);
+                if(writeConcernLatch != null) {
+                    writeConcernLatch.countDown();
+                }
+            }
+        };
+
+        if (waitForReady) {
+            asyncAppendEntriesStub.withWaitForReady().appendEntries(requestRpc, responseObserver);
+        }
     }
 }

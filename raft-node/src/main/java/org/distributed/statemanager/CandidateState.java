@@ -9,6 +9,8 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.RequestAppendEntriesRPC;
+import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +56,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public void onHeartbeatRequest(final AppendEntriesRequest appendEntriesRequest) {
-        logger.info("Heartbeat from Leader in CandidateState");
+        logger.debug("Heartbeat from Leader in CandidateState");
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
             stopElectionTimeout();
@@ -64,7 +66,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
-        logger.info("Nothing to do in CandidateState");
+        logger.debug("Nothing to do in CandidateState");
     }
 
     @Override
@@ -79,6 +81,18 @@ public class CandidateState extends BaseState {
 
         startElectionTimeout();
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public void onReplicateRequest(RequestAppendEntriesRPC request) {
+        stopElectionTimeout();
+        final int id = IdGenerator.id();
+        request.getEntriesList().stream()
+                .map(entry -> new LogItem(id, entry.getCommand(), entry.getTerm()))
+                .findFirst().ifPresent((messageService::saveMessages));
+        IdGenerator.id();
+        IdGenerator.setCommitCounter(id);
+        startElectionTimeout();
     }
 
     @Override
