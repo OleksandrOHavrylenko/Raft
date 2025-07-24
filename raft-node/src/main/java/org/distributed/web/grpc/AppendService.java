@@ -2,6 +2,7 @@ package org.distributed.web.grpc;
 
 import io.grpc.stub.StreamObserver;
 import org.distributed.model.appendentries.AppendEntriesRequest;
+import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.appendentries.LogEntry;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.AppendEntriesServiceGrpc;
@@ -31,16 +32,20 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
         logger.debug("appendEntries in gRPC server - request: {}", request);
 
         if (request.getEntriesList().isEmpty()) {
-            stateManager.onHeartBeatRequest(convertTo(request));
+            AppendEntriesResponse appendEntriesResponse = stateManager.onHeartBeatRequest(convertTo(request));
 
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
+                    .setTerm(appendEntriesResponse.term())
+                    .setSuccess(appendEntriesResponse.success())
+                    .build();
 
             responseObserver.onNext(response);
         } else {
-            stateManager.onReplicateRequest(convertTo(request));
+            AppendEntriesResponse appendEntriesResponse = stateManager.onReplicateRequest(convertTo(request));
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
+                    .setTerm(appendEntriesResponse.term())
+                    .setSuccess(appendEntriesResponse.success())
+                    .build();
 
             responseObserver.onNext(response);
         }

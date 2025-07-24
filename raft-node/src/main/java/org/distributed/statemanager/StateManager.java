@@ -63,8 +63,8 @@ public class StateManager {
         return currentState.onRequestVote(voteRequest);
     }
 
-    public void onHeartBeatRequest(final AppendEntriesRequest appendEntriesRequest) {
-        currentState.onHeartbeatRequest(appendEntriesRequest);
+    public AppendEntriesResponse onHeartBeatRequest(final AppendEntriesRequest appendEntriesRequest) {
+        return currentState.onHeartbeatRequest(appendEntriesRequest);
     }
 
     public void onHeartBeatResponse(final AppendEntriesResponse appendEntriesResponse) {
@@ -87,7 +87,7 @@ public class StateManager {
         return this.currentState.append(message);
     }
 
-    public void onReplicateRequest(final AppendEntriesRequest request) {
-        this.currentState.onReplicateRequest(request);
+    public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
+        return this.currentState.onReplicateRequest(request);
     }
 }

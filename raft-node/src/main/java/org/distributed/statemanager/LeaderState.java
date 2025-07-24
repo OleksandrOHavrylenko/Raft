@@ -35,21 +35,20 @@ public class LeaderState extends BaseState{
     @Override
     public void onStart() {
         logger.info("Starting Leader at NodeId: {}! with Term = {}", clusterInfo.getCurrentNode().getNodeId(), clusterInfo.getCurrentNode().getTerm());
+        clusterInfo.setNextIndexToFollowers(clusterInfo.getCurrentNode().getLastLogIndex() + 1);
         heartBeatService.startHeartBeatSchedule();
     }
 
     @Override
-    public void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
+    public AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest) {
         logger.debug("!!!Leader received Heartbeat from Leader");
-        if (clusterInfo.getCurrentNode().getLeaderCommit() < appendEntriesRequest.leaderCommit()) {
-            IdGenerator.setLeaderCommit(appendEntriesRequest.leaderCommit());
-        }
 
         if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             this.heartBeatService.shutDownHeartBeats();
             clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
             this.nextState(State.FOLLOWER);
         }
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override
@@ -79,8 +78,9 @@ public class LeaderState extends BaseState{
     }
 
     @Override
-    public void onReplicateRequest(final AppendEntriesRequest request) {
+    public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         logger.info("Leader --> received ReplicateRequest from Leader, nothing to do");
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override

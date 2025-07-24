@@ -54,16 +54,23 @@ public class CandidateState extends BaseState {
     }
 
     @Override
-    public void onHeartbeatRequest(final AppendEntriesRequest appendEntriesRequest) {
+    public AppendEntriesResponse onHeartbeatRequest(final AppendEntriesRequest request) {
         logger.debug("Heartbeat from Leader in CandidateState");
-        if (clusterInfo.getCurrentNode().getLeaderCommit() < appendEntriesRequest.leaderCommit()) {
-            IdGenerator.setLeaderCommit(appendEntriesRequest.leaderCommit());
+        LogItem lastMessage = messageService.getLastMessage();
+        if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+            IdGenerator.id();
+            IdGenerator.setLeaderCommit(request.leaderCommit());
+            stopElectionTimeout();
+            nextState(State.FOLLOWER);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
-        if (appendEntriesRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(appendEntriesRequest.term());
+        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(request.term());
             stopElectionTimeout();
             nextState(State.FOLLOWER);
         }
+
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override
@@ -91,19 +98,18 @@ public class CandidateState extends BaseState {
     }
 
     @Override
-    public void onReplicateRequest(final AppendEntriesRequest request) {
+    public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
         LogItem lastMessage = messageService.getLastMessage();
-//        logger.info("AppendRequest = {}", request);
-//        logger.info("LastMessage = {}", lastMessage);
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
-            IdGenerator.id();
             request.entries().stream()
                     .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
                     .findFirst().ifPresent((messageService::saveMessages));
             IdGenerator.setLeaderCommit(request.leaderCommit());
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
         startElectionTimeout();
+        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override

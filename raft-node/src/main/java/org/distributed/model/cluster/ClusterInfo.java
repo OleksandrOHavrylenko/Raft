@@ -61,4 +61,10 @@ public class ClusterInfo {
     public synchronized void setNodeState(final State state) {
         this.nodeState = state;
     }
+
+    public void setNextIndexToFollowers(final int nextIndex) {
+        for (ClusterNode otherNode : otherNodes) {
+            otherNode.setNextIndex(nextIndex);
+        }
+    }
 }

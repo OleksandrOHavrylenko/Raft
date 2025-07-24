@@ -35,7 +35,7 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract void onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest);
+    public abstract AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest);
     public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public abstract LogItem append(final String message);
@@ -48,5 +48,5 @@ public abstract class BaseState {
         return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
 
-    public abstract void onReplicateRequest(final AppendEntriesRequest request);
+    public abstract AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request);
 }
