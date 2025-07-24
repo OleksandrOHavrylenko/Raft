@@ -48,8 +48,8 @@ public class MessageServiceImpl implements MessageService {
                 new AppendEntriesRequest(
                         clusterInfo.getCurrentNode().getTerm(),
                         clusterInfo.getCurrentNode().getNodeId(),
-                        clusterInfo.getCurrentNode().getLastLogIndex(),
-                        clusterInfo.getCurrentNode().getLastLogTerm(),
+                        clusterInfo.getCurrentNode().getPrevLogIndex(),
+                        clusterInfo.getCurrentNode().getPrevLogTerm(),
                         List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
                         clusterInfo.getCurrentNode().getLeaderCommit());
 

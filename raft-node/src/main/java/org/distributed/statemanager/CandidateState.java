@@ -75,7 +75,12 @@ public class CandidateState extends BaseState {
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
         stopElectionTimeout();
 
-        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+        if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
+                (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
+                        clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
+            startElectionTimeout();
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             nextState(State.FOLLOWER);
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);

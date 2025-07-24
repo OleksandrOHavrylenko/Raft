@@ -69,7 +69,12 @@ public class FollowerState extends BaseState {
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
         stopElectionTimeout();
 
-        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+        if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
+                (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
+                    clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
+            startElectionTimeout(0L);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
         } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
@@ -79,7 +84,6 @@ public class FollowerState extends BaseState {
                 return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
             }
         }
-
         startElectionTimeout(0L);
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }

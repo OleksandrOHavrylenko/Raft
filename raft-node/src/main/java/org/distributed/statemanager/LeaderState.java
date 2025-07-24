@@ -64,7 +64,11 @@ public class LeaderState extends BaseState{
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
 
-        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+        if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
+                (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
+                        clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
             this.clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
             this.heartBeatService.shutDownHeartBeats();
             this.nextState(State.FOLLOWER);

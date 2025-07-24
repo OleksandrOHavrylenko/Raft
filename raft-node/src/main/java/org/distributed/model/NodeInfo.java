@@ -36,7 +36,7 @@ public class NodeInfo {
     }
 
     public int getLastLogIndex() {
-        return IdGenerator.getPreviousIndex();
+        return IdGenerator.getLast() - 1;
     }
 
     public long getLastLogTerm() {
@@ -45,6 +45,18 @@ public class NodeInfo {
             return 0L;
         }
         return logRepository.getLogItem(lastLogIndex).term();
+    }
+
+    public int getPrevLogIndex() {
+        return IdGenerator.getPreviousIndex();
+    }
+
+    public long getPrevLogTerm() {
+        int prevLogIndex = getPrevLogIndex();
+        if (prevLogIndex < 0) {
+            return 0L;
+        }
+        return logRepository.getLogItem(prevLogIndex).term();
     }
 
     public String getVotedFor() {
