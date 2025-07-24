@@ -106,11 +106,12 @@ public class GrpcClientImpl implements GrpcClient {
 
         RequestAppendEntriesRPC.Builder builder = RequestAppendEntriesRPC.newBuilder();
         logEntries.forEach(builder::addEntries);
-        builder.setTerm(request.term())
-                .setLeaderId(request.leaderId())
-                .setPrevLogIndex(request.prevLogIndex())
-                .setTerm(request.prevLogTerm())
-                .setLeaderCommit(request.leaderCommit());
+        builder
+            .setTerm(request.term())
+            .setLeaderId(request.leaderId())
+            .setPrevLogIndex(request.prevLogIndex())
+            .setPrevLogTerm(request.prevLogTerm())
+            .setLeaderCommit(request.leaderCommit());
         RequestAppendEntriesRPC requestRpc = builder.build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {

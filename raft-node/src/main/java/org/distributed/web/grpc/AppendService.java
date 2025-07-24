@@ -37,21 +37,25 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
                     .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
 
             responseObserver.onNext(response);
-            responseObserver.onCompleted();
         } else {
             stateManager.onReplicateRequest(convertTo(request));
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
                     .setTerm(stateManager.getClusterInfo().getCurrentNode().getTerm()).setSuccess(true).build();
 
             responseObserver.onNext(response);
-            responseObserver.onCompleted();
         }
+        responseObserver.onCompleted();
     }
 
     private AppendEntriesRequest convertTo(RequestAppendEntriesRPC request) {
-        return new AppendEntriesRequest(request.getTerm(), request.getLeaderId(), request.getPrevLogIndex(),
+        return new AppendEntriesRequest(
+                request.getTerm(),
+                request.getLeaderId(),
+                request.getPrevLogIndex(),
                 request.getPrevLogTerm(),
-                request.getEntriesList().stream().map(v -> new LogEntry(v.getIndex(), v.getTerm(), v.getCommand())).toList(),
+                request.getEntriesList().stream()
+                        .map(v -> new LogEntry(v.getIndex(), v.getTerm(), v.getCommand()))
+                        .toList(),
                 request.getLeaderCommit());
     }
 }

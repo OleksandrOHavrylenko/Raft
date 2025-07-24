@@ -9,7 +9,6 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.message.MessageService;
-import org.distributed.stubs.RequestAppendEntriesRPC;
 import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,11 +88,16 @@ public class CandidateState extends BaseState {
     @Override
     public void onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        IdGenerator.id();
-        request.entries().stream()
-                .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
-                .findFirst().ifPresent((messageService::saveMessages));
-        IdGenerator.setLeaderCommit(request.leaderCommit());
+        LogItem lastMessage = messageService.getLastMessage();
+//        logger.info("AppendRequest = {}", request);
+//        logger.info("LastMessage = {}", lastMessage);
+        if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+            IdGenerator.id();
+            request.entries().stream()
+                    .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
+                    .findFirst().ifPresent((messageService::saveMessages));
+            IdGenerator.setLeaderCommit(request.leaderCommit());
+        }
         startElectionTimeout();
     }
 

@@ -7,14 +7,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  **/
 public class IdGenerator {
     private final static AtomicInteger counter = new AtomicInteger(0);
+    private final static AtomicInteger prevCounter = new AtomicInteger(- 1);
     private final static AtomicInteger leaderCommit = new AtomicInteger(0);
 
     public static int id() {
-        return counter.getAndIncrement();
+        int id = counter.getAndIncrement();
+        prevCounter.set(id - 1);
+        return id;
     }
 
     public static int getLast() {
         return counter.get();
+    }
+
+    public static int getPreviousIndex() {
+        return prevCounter.get();
     }
 
     public static int getLeaderCommit() {

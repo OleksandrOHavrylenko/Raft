@@ -10,5 +10,6 @@ import java.util.List;
 public interface MessageService {
     LogItem append(final String message);
     List<String> getMessages();
+    LogItem getLastMessage();
     void saveMessages(LogItem messages);
 }

@@ -87,11 +87,16 @@ public class FollowerState extends BaseState {
     @Override
     public void onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        IdGenerator.id();
-        request.entries().stream()
-                .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
-                .findFirst().ifPresent((messageService::saveMessages));
-        IdGenerator.setLeaderCommit(request.leaderCommit());
+        LogItem lastMessage = messageService.getLastMessage();
+//        logger.info("AppendRequest = {}", request);
+//        logger.info("LastMessage = {}", lastMessage);
+        if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+            IdGenerator.id();
+            request.entries().stream()
+                    .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
+                    .findFirst().ifPresent((messageService::saveMessages));
+            IdGenerator.setLeaderCommit(request.leaderCommit());
+        }
         startElectionTimeout(0L);
     }
 
@@ -122,6 +127,7 @@ public class FollowerState extends BaseState {
     }
 
     public void startElectionTimeout(long delay) {
+        stopElectionTimeout();
         long timeout = new Random(System.nanoTime()).nextLong(ELECTION_TIMEOUT_MIN, ELECTION_TIMOUT_MAX) + delay;
         logger.debug("Election timer intRange = {}", timeout);
         timeOutHandler = scheduler.schedule(this::onElectionTimeout, timeout, TimeUnit.MILLISECONDS);

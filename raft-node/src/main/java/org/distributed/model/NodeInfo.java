@@ -1,7 +1,11 @@
 package org.distributed.model;
 
+import org.distributed.repository.LogRepository;
 import org.distributed.util.IdGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -9,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Oleksandr Havrylenko
  **/
 public class NodeInfo {
+    private static final Logger logger = LoggerFactory.getLogger(NodeInfo.class);
     private final String nodeId;
     private final String host;
     private final int port;
@@ -17,11 +22,13 @@ public class NodeInfo {
     private final AtomicInteger lastLogIndex = new AtomicInteger(0);
     private final AtomicLong lastLogTerm = new AtomicLong(0L);
     private final AtomicInteger nextLogIndex = new AtomicInteger(1);
+    private final LogRepository logRepository;
 
-    public NodeInfo(final String nodeId, final String host, final int port) {
+    public NodeInfo(final String nodeId, final String host, final int port, final LogRepository logRepository) {
         this.nodeId = nodeId;
         this.host = host;
         this.port = port;
+        this.logRepository = Objects.requireNonNull(logRepository);
     }
 
     public long getTerm() {
@@ -29,11 +36,15 @@ public class NodeInfo {
     }
 
     public int getLastLogIndex() {
-        return lastLogIndex.get();
+        return IdGenerator.getPreviousIndex();
     }
 
     public long getLastLogTerm() {
-        return lastLogTerm.get();
+        int lastLogIndex = getLastLogIndex();
+        if (lastLogIndex < 0) {
+            return 0L;
+        }
+        return logRepository.getLogItem(lastLogIndex).term();
     }
 
     public String getVotedFor() {

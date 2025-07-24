@@ -44,7 +44,7 @@ public class HeartBeatServiceImpl implements HeartBeatService {
                         List.of(),
                         clusterInfo.getCurrentNode().getLeaderCommit());
         scheduledHeartBeatHandler = clusterInfo.getOtherNodes().stream()
-                .map(otherNode -> scheduledExecutor.scheduleWithFixedDelay(
+                .map(otherNode -> scheduledExecutor.scheduleAtFixedRate(
                         () -> otherNode.getGrpcClient().asyncHeartBeat(request), 0, HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS)).toList();
     }
 

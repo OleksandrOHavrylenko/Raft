@@ -2,6 +2,7 @@ package org.distributed.model.cluster;
 
 import org.distributed.model.ClusterNode;
 import org.distributed.model.NodeInfo;
+import org.distributed.repository.LogRepository;
 import org.distributed.statemanager.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +26,9 @@ public class ClusterInfo {
 
     public ClusterInfo(@Value("${node.id}") String nodeId, @Value("${grpc.server.port}") int port,
                        @Value("${grpc.node1.host}") String host1, @Value("${grpc.node1.port}") int port1,
-                       @Value("${grpc.node2.host}") String host2, @Value("${grpc.node2.port}") int port2) {
-        this.currentNode = new NodeInfo(nodeId, nodeId, port);
+                       @Value("${grpc.node2.host}") String host2, @Value("${grpc.node2.port}") int port2,
+                       final LogRepository logRepository) {
+        this.currentNode = new NodeInfo(nodeId, nodeId, port, logRepository);
         this.otherNodes = Arrays.asList(new ClusterNode(host1, host1, port1), new ClusterNode(host2, host2, port2));
 
         LOGGER.info("Cluster created on Node = {}, with other nodes = {}", this.currentNode, this.otherNodes);

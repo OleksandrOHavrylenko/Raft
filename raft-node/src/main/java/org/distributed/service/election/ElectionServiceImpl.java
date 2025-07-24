@@ -63,7 +63,7 @@ public class ElectionServiceImpl implements ElectionService {
 
     private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger voteThis, AtomicInteger errorsDuringElection) {
         try {
-            final VoteResponse voteResponse = future.get(timeOutMillis, TimeUnit.MILLISECONDS);
+            final VoteResponse voteResponse = future.get();
             if (voteResponse != null) {
                 if (voteResponse.voteGranted()) {
                     voteThis.incrementAndGet();

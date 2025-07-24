@@ -43,14 +43,17 @@ public class MessageServiceImpl implements MessageService {
         logRepository.add(logItem);
 
         CountDownLatch writeConcernLatch = new CountDownLatch(clusterInfo.getMajoritySize());
+
+        final AppendEntriesRequest appendEntriesRequest =
+                new AppendEntriesRequest(
+                        clusterInfo.getCurrentNode().getTerm(),
+                        clusterInfo.getCurrentNode().getNodeId(),
+                        clusterInfo.getCurrentNode().getLastLogIndex(),
+                        clusterInfo.getCurrentNode().getLastLogTerm(),
+                        List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
+                        clusterInfo.getCurrentNode().getLeaderCommit());
+
         for (ClusterNode replica : clusterInfo.getOtherNodes()) {
-            final AppendEntriesRequest appendEntriesRequest =
-                    new AppendEntriesRequest(clusterInfo.getCurrentNode().getTerm(),
-                            clusterInfo.getCurrentNode().getNodeId(),
-                            clusterInfo.getCurrentNode().getLastLogIndex(),
-                            clusterInfo.getCurrentNode().getLastLogTerm(),
-                            List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
-                            clusterInfo.getCurrentNode().getLeaderCommit());
             executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, true));
         }
         try {
@@ -65,6 +68,14 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<String> getMessages() {
         return logRepository.getAll(IdGenerator.getLast());
+    }
+
+    @Override
+    public LogItem getLastMessage() {
+        if (IdGenerator.getLast() == 0) {
+            return null;
+        }
+        return logRepository.getLassMessage();
     }
 
     @Override
