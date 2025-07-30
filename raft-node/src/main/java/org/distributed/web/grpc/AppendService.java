@@ -3,7 +3,7 @@ package org.distributed.web.grpc;
 import io.grpc.stub.StreamObserver;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
-import org.distributed.model.appendentries.LogEntry;
+import org.distributed.model.dto.LogItem;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.AppendEntriesServiceGrpc;
 import org.distributed.stubs.RequestAppendEntriesRPC;
@@ -31,7 +31,7 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
     public void appendEntries(RequestAppendEntriesRPC request, StreamObserver<ResponseAppendEntriesRPC> responseObserver) {
         logger.debug("appendEntries in gRPC server - request: {}", request);
 
-        if (request.getEntriesList().isEmpty()) {
+        if (request.getIsHb()) {
             AppendEntriesResponse appendEntriesResponse = stateManager.onHeartBeatRequest(convertTo(request));
 
             ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
@@ -59,8 +59,9 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
                 request.getPrevLogIndex(),
                 request.getPrevLogTerm(),
                 request.getEntriesList().stream()
-                        .map(v -> new LogEntry(v.getIndex(), v.getTerm(), v.getCommand()))
+                        .map(v -> new LogItem(v.getIndex(), v.getCommand(), v.getTerm()))
                         .toList(),
-                request.getLeaderCommit());
+                request.getLeaderCommit(),
+                request.getIsHb());
     }
 }

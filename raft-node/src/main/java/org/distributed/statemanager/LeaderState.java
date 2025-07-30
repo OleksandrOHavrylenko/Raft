@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
@@ -8,8 +9,6 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.distributed.service.message.MessageService;
-import org.distributed.stubs.RequestAppendEntriesRPC;
-import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,12 +51,23 @@ public class LeaderState extends BaseState{
     }
 
     @Override
-    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
         if (appendEntriesResponse.term() > clusterInfo.getCurrentNode().getTerm()) {
             this.heartBeatService.shutDownHeartBeats();
             clusterInfo.getCurrentNode().setTerm(appendEntriesResponse.term());
             this.nextState(State.FOLLOWER);
         }
+        if(appendEntriesResponse.success()) {
+            logger.info("Here because success response from {}", clusterNode);
+            if (clusterNode.getNextIndex() < clusterInfo.getCurrentNode().getNextLogIndex()) {
+                clusterNode.getAndIncrementNextIndex();
+            }
+        }else {
+            logger.info("Here because fail response from {}", clusterNode);
+            clusterNode.decrementAndGetNextIndex();
+        }
+        logger.info("New nextIndex={} for node Leader = {}", clusterNode.getNextIndex() , clusterInfo.getCurrentNode().getNextLogIndex());
+        logger.info("New nextIndex={} for node = {}", clusterNode.getNextIndex() , clusterNode);
     }
 
     @Override
@@ -68,10 +78,10 @@ public class LeaderState extends BaseState{
                         clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
         } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            this.clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
+            this.clusterInfo.getCurrentNode().setTerm(voteRequest.term());
             this.heartBeatService.shutDownHeartBeats();
             this.nextState(State.FOLLOWER);
-            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
 
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);

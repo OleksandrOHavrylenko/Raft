@@ -5,6 +5,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.vote.VoteRequest;
@@ -31,12 +32,14 @@ public class GrpcClientImpl implements GrpcClient {
     private final ManagedChannel channel;
     private VoteServiceGrpc.VoteServiceBlockingStub voteBlockingStub;
     private AppendEntriesServiceGrpc.AppendEntriesServiceStub asyncAppendEntriesStub;
+    private ClusterNode clusterNode;
 
-    public GrpcClientImpl(final String host, final int port) {
+    public GrpcClientImpl(final String host, final int port, final ClusterNode clusterNode) {
         this.host = host;
         this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         this.voteBlockingStub = VoteServiceGrpc.newBlockingStub(this.channel);
         this.asyncAppendEntriesStub = AppendEntriesServiceGrpc.newStub(this.channel);
+        this.clusterNode = Objects.requireNonNull(clusterNode);
     }
 
     @Override
@@ -62,12 +65,27 @@ public class GrpcClientImpl implements GrpcClient {
     }
 
     @Override
-    public void asyncHeartBeat(final AppendEntriesRequest appendEntriesRequest) {
-        logger.debug("HeartBeat --> sent to host: {} , with Term = {}", this.host, appendEntriesRequest.term());
+    public void asyncHeartBeat(final AppendEntriesRequest request) {
+        logger.debug("HeartBeat --> sent to host: {} , with Term = {}", this.host, request.term());
 
-        RequestAppendEntriesRPC heartBeatRequest = RequestAppendEntriesRPC.newBuilder()
-                .setTerm(appendEntriesRequest.term())
-                .build();
+        List<RequestAppendEntriesRPC.LogEntry> logEntries = request.entries().stream()
+                .map(item -> RequestAppendEntriesRPC.LogEntry.newBuilder()
+                        .setIndex(item.id())
+                        .setTerm(item.term())
+                        .setCommand(item.message())
+                        .build())
+                .toList();
+
+        RequestAppendEntriesRPC.Builder builder = RequestAppendEntriesRPC.newBuilder();
+        logEntries.forEach(builder::addEntries);
+        builder
+                .setTerm(request.term())
+                .setLeaderId(request.leaderId())
+                .setPrevLogIndex(request.prevLogIndex())
+                .setPrevLogTerm(request.prevLogTerm())
+                .setLeaderCommit(request.leaderCommit())
+                .setIsHb(request.isHb());
+        RequestAppendEntriesRPC heartBeatRequest = builder.build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {
 
@@ -77,7 +95,7 @@ public class GrpcClientImpl implements GrpcClient {
                 AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
 
                 StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
-                stateManager.onHeartBeatResponse(response);
+                stateManager.onHeartBeatResponse(response, clusterNode);
 
             }
 
@@ -98,9 +116,9 @@ public class GrpcClientImpl implements GrpcClient {
     public void asyncReplicateLog(AppendEntriesRequest request, CountDownLatch writeConcernLatch, boolean waitForReady) {
         List<RequestAppendEntriesRPC.LogEntry> logEntries = request.entries().stream()
                 .map(item -> RequestAppendEntriesRPC.LogEntry.newBuilder()
-                        .setIndex(item.index())
+                        .setIndex(item.id())
                         .setTerm(item.term())
-                        .setCommand(item.command())
+                        .setCommand(item.message())
                         .build())
                 .toList();
 
@@ -111,7 +129,8 @@ public class GrpcClientImpl implements GrpcClient {
             .setLeaderId(request.leaderId())
             .setPrevLogIndex(request.prevLogIndex())
             .setPrevLogTerm(request.prevLogTerm())
-            .setLeaderCommit(request.leaderCommit());
+            .setLeaderCommit(request.leaderCommit())
+            .setIsHb(request.isHb());
         RequestAppendEntriesRPC requestRpc = builder.build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {
@@ -119,7 +138,6 @@ public class GrpcClientImpl implements GrpcClient {
             @Override
             public void onNext(ResponseAppendEntriesRPC value) {
                 logger.info("Response from : {} node: {}", host, value);
-
             }
 
             @Override
@@ -141,6 +159,8 @@ public class GrpcClientImpl implements GrpcClient {
 
         if (waitForReady) {
             asyncAppendEntriesStub.withWaitForReady().appendEntries(requestRpc, responseObserver);
+        } else {
+            asyncAppendEntriesStub.appendEntries(requestRpc, responseObserver);
         }
     }
 }

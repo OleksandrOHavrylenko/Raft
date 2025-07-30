@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
@@ -7,7 +8,6 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
-import org.distributed.stubs.RequestAppendEntriesRPC;
 import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,8 +51,11 @@ public class FollowerState extends BaseState {
     public AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest request) {
         logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
-        LogItem lastMessage = messageService.getLastMessage();
+        logger.info("request = {}", request);
+        LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+            request.entries().stream()
+                    .findFirst().ifPresent(message -> onMessageSave(message));
             IdGenerator.setLeaderCommit(request.leaderCommit());
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
@@ -64,25 +67,26 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
         logger.debug("Nothing to do in FollowerState");
     }
 
     @Override
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
         stopElectionTimeout();
+        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
+        }
 
         if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
                 (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
                     clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
             startElectionTimeout(0L);
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
-            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
         } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
-            if (clusterInfo.getCurrentNode().getVotedFor() == null ||
-                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId())) {
+            if ((clusterInfo.getCurrentNode().getVotedFor() == null ||
+                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId()))
+            && (clusterInfo.getCurrentNode().getLastLogIndex() <= voteRequest.lastLogIndex())) {
                 clusterInfo.getCurrentNode().setVotedFor(voteRequest.candidateId());
                 return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
             }
@@ -94,17 +98,21 @@ public class FollowerState extends BaseState {
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        LogItem lastMessage = messageService.getLastMessage();
+        LogItem lastMessage = messageService.getByIndex(IdGenerator.getLeaderCommit());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
-            IdGenerator.id();
+
             request.entries().stream()
-                    .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
-                    .findFirst().ifPresent((messageService::saveMessages));
+                    .findFirst().ifPresent(message -> onMessageSave(message));
             IdGenerator.setLeaderCommit(request.leaderCommit());
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
         startElectionTimeout(0L);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    private void onMessageSave(LogItem message) {
+        IdGenerator.setId(message.id() + 1);
+        messageService.saveMessages(message);
     }
 
     @Override

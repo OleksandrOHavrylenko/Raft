@@ -1,5 +1,7 @@
 package org.distributed.model.appendentries;
 
+import org.distributed.model.dto.LogItem;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,12 +13,13 @@ public record AppendEntriesRequest(
         String leaderId,
         int prevLogIndex,
         long prevLogTerm,
-        List<LogEntry> entries,
-        int leaderCommit) {
+        List<LogItem> entries,
+        int leaderCommit,
+        boolean isHb) {
 
 
     @Override
-    public List<LogEntry> entries() {
+    public List<LogItem> entries() {
         return new ArrayList<>(entries);
     }
 }

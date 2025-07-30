@@ -28,6 +28,7 @@ message RequestAppendEntriesRPC {
   int64 prevLogTerm = 4;
   repeated LogEntry entries = 5;
   int32 leaderCommit = 6;
+  bool isHb = 7;
 }
 message ResponseAppendEntriesRPC {
   int64 term = 1;

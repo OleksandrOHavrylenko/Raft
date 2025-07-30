@@ -21,7 +21,7 @@ public class NodeInfo {
     private final AtomicLong term = new AtomicLong(0L);
     private final AtomicInteger lastLogIndex = new AtomicInteger(0);
     private final AtomicLong lastLogTerm = new AtomicLong(0L);
-    private final AtomicInteger nextLogIndex = new AtomicInteger(1);
+//    private final AtomicInteger nextLogIndex = new AtomicInteger(1);
     private final LogRepository logRepository;
 
     public NodeInfo(final String nodeId, final String host, final int port, final LogRepository logRepository) {
@@ -36,7 +36,7 @@ public class NodeInfo {
     }
 
     public int getLastLogIndex() {
-        return IdGenerator.getLast() - 1;
+        return IdGenerator.getNextIndex() - 1;
     }
 
     public long getLastLogTerm() {
@@ -44,7 +44,7 @@ public class NodeInfo {
         if (lastLogIndex < 0) {
             return 0L;
         }
-        return logRepository.getLogItem(lastLogIndex).term();
+        return logRepository.getMessageByIndex(lastLogIndex).term();
     }
 
     public int getPrevLogIndex() {
@@ -56,7 +56,7 @@ public class NodeInfo {
         if (prevLogIndex < 0) {
             return 0L;
         }
-        return logRepository.getLogItem(prevLogIndex).term();
+        return logRepository.getMessageByIndex(prevLogIndex).term();
     }
 
     public String getVotedFor() {
@@ -80,12 +80,12 @@ public class NodeInfo {
     }
 
     public int getNextLogIndex() {
-        return nextLogIndex.get();
+        return IdGenerator.getNextIndex();
     }
-
-    public void setNextLogIndex(final int index) {
-        nextLogIndex.set(index);
-    }
+//
+//    public void setNextLogIndex(final int index) {
+//        nextLogIndex.set(index);
+//    }
 
     public void voteForSelfAndIncrTerm() {
         setVotedFor(nodeId);

@@ -23,7 +23,7 @@ public class ClusterNode {
         this.nodeId = Objects.requireNonNull(nodeId);
         this.host = Objects.requireNonNull(host);
         this.port = port;
-        this.grpcClient = new GrpcClientImpl(this.host, this.port);
+        this.grpcClient = new GrpcClientImpl(this.host, this.port, this);
     }
 
     public GrpcClient getGrpcClient() {
@@ -36,6 +36,14 @@ public class ClusterNode {
 
     public void setNextIndex(final int nextIndex) {
         this.nextIndex.set(nextIndex);
+    }
+
+    public int getAndIncrementNextIndex() {
+        return this.nextIndex.incrementAndGet();
+    }
+
+    public int decrementAndGetNextIndex() {
+        return this.nextIndex.decrementAndGet();
     }
 
     public int getNextIndex() {

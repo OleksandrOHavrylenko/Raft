@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
@@ -7,7 +8,6 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
-import org.distributed.stubs.RequestAppendEntriesRPC;
 
 import java.util.List;
 import java.util.Objects;
@@ -17,11 +17,11 @@ import java.util.Random;
  * @author Oleksandr Havrylenko
  **/
 public abstract class BaseState {
-    public static final long STARTUP_DELAY = 7000L;
-    public static final long ELECTION_TIMEOUT_MIN = 250;
-    public static final long ELECTION_TIMOUT_MAX = 500;
-    public static final long VOTE_TIMEOUT_MILLIS = 10L;
-    public static final long HEARTBEAT_INTERVAL = 50L;
+    public static final long STARTUP_DELAY = 5000L;
+    public static final long ELECTION_TIMEOUT_MIN = 2500;
+    public static final long ELECTION_TIMOUT_MAX = 5000;
+    public static final long VOTE_TIMEOUT_MILLIS = 100L;
+    public static final long HEARTBEAT_INTERVAL = 1500L;
 
     protected final StateManager stateManager;
     protected final MessageService messageService;
@@ -36,7 +36,7 @@ public abstract class BaseState {
 
     public abstract void onStart();
     public abstract AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest);
-    public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse);
+    public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public abstract LogItem append(final String message);
     public abstract List<String> getMessages();

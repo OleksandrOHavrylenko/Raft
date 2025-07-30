@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.ClusterNode;
 import org.distributed.model.ElectionStatus;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
@@ -56,25 +57,25 @@ public class CandidateState extends BaseState {
     @Override
     public AppendEntriesResponse onHeartbeatRequest(final AppendEntriesRequest request) {
         logger.debug("Heartbeat from Leader in CandidateState");
-        LogItem lastMessage = messageService.getLastMessage();
+        LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
-            IdGenerator.id();
-            IdGenerator.setLeaderCommit(request.leaderCommit());
             stopElectionTimeout();
+            IdGenerator.setId(Math.min(IdGenerator.getNextIndex(), request.prevLogIndex() + 1));
+            request.entries().stream()
+                    .findFirst().ifPresent((messageService::saveMessages));
+            IdGenerator.setLeaderCommit(request.leaderCommit());
             nextState(State.FOLLOWER);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
-        }
-        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+        } else if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
             clusterInfo.getCurrentNode().setTerm(request.term());
-            stopElectionTimeout();
-            nextState(State.FOLLOWER);
         }
-
+        stopElectionTimeout();
+        nextState(State.FOLLOWER);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
 
     @Override
-    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse) {
+    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
         logger.debug("Nothing to do in CandidateState");
     }
 
@@ -88,9 +89,9 @@ public class CandidateState extends BaseState {
             startElectionTimeout();
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
         } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term(), voteRequest.candidateId());
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
             nextState(State.FOLLOWER);
-            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
 
         startElectionTimeout();
@@ -100,10 +101,9 @@ public class CandidateState extends BaseState {
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        LogItem lastMessage = messageService.getLastMessage();
+        LogItem lastMessage = messageService.getByIndex(IdGenerator.getLeaderCommit());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
             request.entries().stream()
-                    .map(entry -> new LogItem(entry.index(), entry.command(), entry.term()))
                     .findFirst().ifPresent((messageService::saveMessages));
             IdGenerator.setLeaderCommit(request.leaderCommit());
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
@@ -125,6 +125,7 @@ public class CandidateState extends BaseState {
 
     @Override
     public void nextState(State nextState) {
+        stopElectionTimeout();
         electionService.stopLeaderElection();
         this.stateManager.setState(nextState);
     }

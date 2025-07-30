@@ -2,7 +2,6 @@ package org.distributed.service.message;
 
 import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
-import org.distributed.model.appendentries.LogEntry;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
 import org.distributed.repository.LogRepository;
@@ -42,7 +41,7 @@ public class MessageServiceImpl implements MessageService {
         final LogItem logItem = new LogItem(id, message, clusterInfo.getCurrentNode().getTerm());
         logRepository.add(logItem);
 
-        CountDownLatch writeConcernLatch = new CountDownLatch(clusterInfo.getMajoritySize());
+        CountDownLatch writeConcernLatch = new CountDownLatch(clusterInfo.getMajoritySize() - 1);
 
         final AppendEntriesRequest appendEntriesRequest =
                 new AppendEntriesRequest(
@@ -50,11 +49,12 @@ public class MessageServiceImpl implements MessageService {
                         clusterInfo.getCurrentNode().getNodeId(),
                         clusterInfo.getCurrentNode().getPrevLogIndex(),
                         clusterInfo.getCurrentNode().getPrevLogTerm(),
-                        List.of(new LogEntry(logItem.id(), logItem.term(), logItem.message())),
-                        clusterInfo.getCurrentNode().getLeaderCommit());
+                        List.of(logItem),
+                        clusterInfo.getCurrentNode().getLeaderCommit(),
+                        false);
 
         for (ClusterNode replica : clusterInfo.getOtherNodes()) {
-            executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, true));
+            executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, false));
         }
         try {
             writeConcernLatch.await();
@@ -67,19 +67,30 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     public List<String> getMessages() {
-        return logRepository.getAll(IdGenerator.getLast());
+        return logRepository.getAll(IdGenerator.getLeaderCommit() + 1);
     }
 
     @Override
     public LogItem getLastMessage() {
-        if (IdGenerator.getLast() == 0) {
+        if (IdGenerator.getNextIndex() == 0) {
             return null;
         }
-        return logRepository.getLassMessage();
+        return logRepository.getMessageByIndex(IdGenerator.getLeaderCommit());
     }
 
     @Override
     public void saveMessages(LogItem logItem) {
         logRepository.add(logItem);
+    }
+
+    @Override
+    public long getTermByIndex(int index) {
+        LogItem logItem = logRepository.getMessageByIndex(index);
+        return logItem == null ? 0 : logItem.term();
+    }
+
+    @Override
+    public LogItem getByIndex(int index) {
+        return logRepository.getMessageByIndex(index);
     }
 }

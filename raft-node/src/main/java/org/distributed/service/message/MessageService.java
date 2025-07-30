@@ -12,4 +12,6 @@ public interface MessageService {
     List<String> getMessages();
     LogItem getLastMessage();
     void saveMessages(LogItem messages);
+    long getTermByIndex(int index);
+    LogItem getByIndex(int index);
 }

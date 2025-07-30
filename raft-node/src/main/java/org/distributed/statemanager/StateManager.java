@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
@@ -67,8 +68,8 @@ public class StateManager {
         return currentState.onHeartbeatRequest(appendEntriesRequest);
     }
 
-    public void onHeartBeatResponse(final AppendEntriesResponse appendEntriesResponse) {
-        currentState.onHeartbeatResponse(appendEntriesResponse);
+    public void onHeartBeatResponse(final AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
+        currentState.onHeartbeatResponse(appendEntriesResponse, clusterNode);
     }
 
     public State getCurrentState() {
