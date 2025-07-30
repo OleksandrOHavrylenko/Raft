@@ -22,6 +22,7 @@ public abstract class BaseState {
     public static final long ELECTION_TIMOUT_MAX = 10000;
     public static final long VOTE_TIMEOUT_MILLIS = 100L;
     public static final long HEARTBEAT_INTERVAL = 5000L;
+    public static final long REPLICATE_TIMEOUT = 50L;
 
     protected final StateManager stateManager;
     protected final MessageService messageService;
@@ -39,7 +40,7 @@ public abstract class BaseState {
     public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public abstract LogItem append(final String message);
-    public abstract List<String> getMessages();
+    public abstract List<LogItem> getMessages();
     public abstract void nextState(State nextState);
     public abstract State getCurrentState();
     public abstract void onStop();

@@ -9,7 +9,7 @@ import java.util.List;
  **/
 public interface MessageService {
     LogItem append(final String message);
-    List<String> getMessages();
+    List<LogItem> getMessages();
     LogItem getLastMessage();
     void saveMessages(LogItem messages);
     long getTermByIndex(int index);

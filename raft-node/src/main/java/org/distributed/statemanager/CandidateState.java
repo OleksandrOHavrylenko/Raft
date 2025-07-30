@@ -57,6 +57,17 @@ public class CandidateState extends BaseState {
     @Override
     public AppendEntriesResponse onHeartbeatRequest(final AppendEntriesRequest request) {
         logger.debug("Heartbeat from Leader in CandidateState");
+        stopElectionTimeout();
+        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
+            startElectionTimeout();
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(request.term());
+            stopElectionTimeout();
+            nextState(State.FOLLOWER);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
         LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
             stopElectionTimeout();
@@ -66,10 +77,7 @@ public class CandidateState extends BaseState {
             IdGenerator.setLeaderCommit(request.leaderCommit());
             nextState(State.FOLLOWER);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
-        } else if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(request.term());
         }
-        stopElectionTimeout();
         nextState(State.FOLLOWER);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
     }
@@ -101,6 +109,16 @@ public class CandidateState extends BaseState {
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
+        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
+            startElectionTimeout();
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(request.term());
+            stopElectionTimeout();
+            nextState(State.FOLLOWER);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
         LogItem lastMessage = messageService.getByIndex(IdGenerator.getLeaderCommit());
         if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
             request.entries().stream()
@@ -119,7 +137,7 @@ public class CandidateState extends BaseState {
     }
 
     @Override
-    public List<String> getMessages() {
+    public List<LogItem> getMessages() {
         return messageService.getMessages();
     }
 

@@ -51,6 +51,13 @@ public class FollowerState extends BaseState {
     public AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest request) {
         logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
+        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
+            startElectionTimeout(0L);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(request.term());
+        }
         logger.info("request = {}", request);
         LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         logger.info("lastMessage = {}, prevIndex = {}", lastMessage, IdGenerator.getPreviousIndex());
@@ -65,8 +72,6 @@ public class FollowerState extends BaseState {
             IdGenerator.setLeaderCommit(request.leaderCommit());
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
-        } else if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(request.term());
         }
         startElectionTimeout(0L);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
@@ -108,6 +113,14 @@ public class FollowerState extends BaseState {
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
+        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
+            startElectionTimeout(0L);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(request.term());
+        }
+
         LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
             logger.info("In null but Not first message, prevLogIndex = {}", request.prevLogIndex());
@@ -138,7 +151,7 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public List<String> getMessages() {
+    public List<LogItem> getMessages() {
         return messageService.getMessages();
     }
 

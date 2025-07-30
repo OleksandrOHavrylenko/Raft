@@ -24,8 +24,8 @@ public class MessageController {
     }
 
     @GetMapping("/list")
-    List<String> getMessages() {
-        List<String> messages = stateManager.getMessages();
+    List<LogItem> getMessages() {
+        List<LogItem> messages = stateManager.getMessages();
         return messages;
     }
 

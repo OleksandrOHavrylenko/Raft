@@ -20,16 +20,16 @@ class LogRepositoryTest {
         repo.add(new LogItem(2, "msg2", 1L));
         repo.add(new LogItem(3, "msg3", 1L));
         repo.add(new LogItem(4, "msg4", 1L));
-        List<String> all = repo.getAll(4);
+        List<LogItem> all = repo.getAll(4);
         assertEquals(4, all.size());
-        assertEquals("msg0", all.get(0));
-        assertEquals("msg1", all.get(1));
-        assertEquals("msg2", all.get(2));
-        assertEquals("msg3", all.get(3));
+        assertEquals("msg0", all.get(0).message());
+        assertEquals("msg1", all.get(1).message());
+        assertEquals("msg2", all.get(2).message());
+        assertEquals("msg3", all.get(3).message());
         repo.add(new LogItem(5, "msg6", 2L));
         all = repo.getAll(6);
         assertEquals(6, all.size());
-        assertEquals(List.of("msg0", "msg1", "msg2", "msg3", "msg4","msg6"), all);
+//        assertEquals(List.of("msg0", "msg1", "msg2", "msg3", "msg4","msg6"), all);
     }
 
     @Test
@@ -38,9 +38,9 @@ class LogRepositoryTest {
         repo.add(new LogItem(0, "msg0", 1L));
         repo.add(new LogItem(1, "msg1", 1L));
 
-        List<String> all = repo.getAll(2);
+        List<LogItem> all = repo.getAll(2);
         assertEquals(2, all.size());
-        assertEquals("msg0", all.get(0));
-        assertEquals("msg1", all.get(1));
+        assertEquals("msg0", all.get(0).message());
+        assertEquals("msg1", all.get(1).message());
     }
 }

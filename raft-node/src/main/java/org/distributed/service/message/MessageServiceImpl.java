@@ -15,6 +15,9 @@ import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.distributed.statemanager.BaseState.REPLICATE_TIMEOUT;
 
 /**
  * @author Oleksandr Havrylenko
@@ -56,17 +59,22 @@ public class MessageServiceImpl implements MessageService {
         for (ClusterNode replica : clusterInfo.getOtherNodes()) {
             executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, false));
         }
+        boolean countDownIsZero = false;
         try {
-            writeConcernLatch.await();
+            countDownIsZero = writeConcernLatch.await(REPLICATE_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            logger.info("RuntimeException occurred while replication", e);
+            logger.info("TimeOut occurred while replication", e);
+        }
+        if (!countDownIsZero) {
+            IdGenerator.setId(IdGenerator.getPreviousIndex());
+            return logRepository.getLogItem(IdGenerator.getLeaderCommit());
         }
         IdGenerator.setLeaderCommit(id);
         return logItem;
     }
 
     @Override
-    public List<String> getMessages() {
+    public List<LogItem> getMessages() {
         return logRepository.getAll(IdGenerator.getLeaderCommit() + 1);
     }
 

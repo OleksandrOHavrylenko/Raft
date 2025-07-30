@@ -26,8 +26,8 @@ public class LogRepository {
             return logsRepository[index];
     }
 
-    public List<String> getAll(int maxIndex) {
-        return Arrays.stream(logsRepository, 0, maxIndex).map(LogItem::message).toList();
+    public List<LogItem> getAll(int maxIndex) {
+        return Arrays.stream(logsRepository, 0, maxIndex).toList();
     }
 
     public LogItem getMessageByIndex(int index) {

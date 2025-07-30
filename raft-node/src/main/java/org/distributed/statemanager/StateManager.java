@@ -80,7 +80,7 @@ public class StateManager {
         return this.clusterInfo;
     }
 
-    public List<String> getMessages() {
+    public List<LogItem> getMessages() {
         return this.currentState.getMessages();
     }
 
