@@ -10,7 +10,6 @@ import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.distributed.service.message.MessageService;
-import org.distributed.stubs.RequestAppendEntriesRPC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -64,12 +63,8 @@ public class StateManager {
         return currentState.onRequestVote(voteRequest);
     }
 
-    public AppendEntriesResponse onHeartBeatRequest(final AppendEntriesRequest appendEntriesRequest) {
-        return currentState.onHeartbeatRequest(appendEntriesRequest);
-    }
-
-    public void onHeartBeatResponse(final AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
-        currentState.onHeartbeatResponse(appendEntriesResponse, clusterNode);
+    public void onAppendEntriesResponse(final AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
+        currentState.onAppendEntriesResponse(appendEntriesResponse, clusterNode);
     }
 
     public State getCurrentState() {

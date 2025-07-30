@@ -48,41 +48,7 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest request) {
-        logger.debug("Heartbeat from leader received in FollowerState");
-        stopElectionTimeout();
-        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
-            startElectionTimeout(0L);
-            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        }
-        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(request.term());
-        }
-        logger.info("request = {}", request);
-        LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
-        logger.info("lastMessage = {}, prevIndex = {}", lastMessage, IdGenerator.getPreviousIndex());
-        if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
-            startElectionTimeout(0L);
-            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        }
-        if (isFirstItem(lastMessage) ||
-                (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
-            request.entries().stream()
-                    .findFirst().ifPresent(message -> onMessageSave(message));
-            IdGenerator.setLeaderCommit(request.leaderCommit());
-            startElectionTimeout(0L);
-            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
-        }
-        startElectionTimeout(0L);
-        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-    }
-
-    private static boolean isFirstItem(LogItem lastMessage) {
-        return IdGenerator.getPreviousIndex() < 0 && lastMessage == null;
-    }
-
-    @Override
-    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
+    public void onAppendEntriesResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
         logger.debug("Nothing to do in FollowerState");
     }
 
@@ -112,6 +78,7 @@ public class FollowerState extends BaseState {
 
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
+        logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
         if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
             startElectionTimeout(0L);
@@ -123,7 +90,6 @@ public class FollowerState extends BaseState {
 
         LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
         if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
-            logger.info("In null but Not first message, prevLogIndex = {}", request.prevLogIndex());
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
@@ -133,6 +99,7 @@ public class FollowerState extends BaseState {
             request.entries().stream()
                     .findFirst().ifPresent(message -> onMessageSave(message));
             IdGenerator.setLeaderCommit(request.leaderCommit());
+            startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
         }
         startElectionTimeout(0L);

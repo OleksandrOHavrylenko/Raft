@@ -83,8 +83,7 @@ public class GrpcClientImpl implements GrpcClient {
                 .setLeaderId(request.leaderId())
                 .setPrevLogIndex(request.prevLogIndex())
                 .setPrevLogTerm(request.prevLogTerm())
-                .setLeaderCommit(request.leaderCommit())
-                .setIsHb(request.isHb());
+                .setLeaderCommit(request.leaderCommit());
         RequestAppendEntriesRPC heartBeatRequest = builder.build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {
@@ -95,7 +94,7 @@ public class GrpcClientImpl implements GrpcClient {
                 AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
 
                 StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
-                stateManager.onHeartBeatResponse(response, clusterNode);
+                stateManager.onAppendEntriesResponse(response, clusterNode);
 
             }
 
@@ -129,8 +128,7 @@ public class GrpcClientImpl implements GrpcClient {
             .setLeaderId(request.leaderId())
             .setPrevLogIndex(request.prevLogIndex())
             .setPrevLogTerm(request.prevLogTerm())
-            .setLeaderCommit(request.leaderCommit())
-            .setIsHb(request.isHb());
+            .setLeaderCommit(request.leaderCommit());
         RequestAppendEntriesRPC requestRpc = builder.build();
 
         StreamObserver<ResponseAppendEntriesRPC> responseObserver = new StreamObserver<ResponseAppendEntriesRPC>() {
@@ -141,7 +139,7 @@ public class GrpcClientImpl implements GrpcClient {
                 AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
 
                 StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
-                stateManager.onHeartBeatResponse(response, clusterNode);
+                stateManager.onAppendEntriesResponse(response, clusterNode);
             }
 
             @Override

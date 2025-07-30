@@ -14,8 +14,7 @@ public record AppendEntriesRequest(
         int prevLogIndex,
         long prevLogTerm,
         List<LogItem> entries,
-        int leaderCommit,
-        boolean isHb) {
+        int leaderCommit){
 
 
     @Override

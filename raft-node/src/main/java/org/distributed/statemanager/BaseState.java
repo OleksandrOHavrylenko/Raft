@@ -8,6 +8,7 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
+import org.distributed.util.IdGenerator;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,12 +37,12 @@ public abstract class BaseState {
     }
 
     public abstract void onStart();
-    public abstract AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest appendEntriesRequest);
-    public abstract void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode);
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
     public abstract LogItem append(final String message);
     public abstract List<LogItem> getMessages();
     public abstract void nextState(State nextState);
+    public abstract AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request);
+    public abstract void onAppendEntriesResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode);
     public abstract State getCurrentState();
     public abstract void onStop();
 
@@ -49,5 +50,7 @@ public abstract class BaseState {
         return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
 
-    public abstract AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request);
+    protected boolean isFirstItem(LogItem lastMessage) {
+        return IdGenerator.getPreviousIndex() < 0 && lastMessage == null;
+    }
 }

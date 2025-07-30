@@ -53,8 +53,7 @@ public class MessageServiceImpl implements MessageService {
                         clusterInfo.getCurrentNode().getPrevLogIndex(),
                         clusterInfo.getCurrentNode().getPrevLogTerm(),
                         List.of(logItem),
-                        clusterInfo.getCurrentNode().getLeaderCommit(),
-                        false);
+                        clusterInfo.getCurrentNode().getLeaderCommit());
 
         for (ClusterNode replica : clusterInfo.getOtherNodes()) {
             executor.submit(() -> replica.asyncSendMessage(appendEntriesRequest, writeConcernLatch, false));

@@ -1,7 +1,6 @@
 package org.distributed.service.heartbeat;
 
 import org.distributed.model.ClusterNode;
-import org.distributed.model.NodeInfo;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.dto.LogItem;
@@ -60,13 +59,8 @@ public class HeartBeatServiceImpl implements HeartBeatService {
         long prevLogTerm = messageService.getTermByIndex(prevLogIndex);
         List<LogItem> entries = List.of();
         int leaderCommit = clusterInfo.getCurrentNode().getLeaderCommit();
-//        logger.info("!!! Leader nextIndex = {}, follower nextIndex = {}",
-//                clusterInfo.getCurrentNode().getNextLogIndex(),
-//                clusterNode.getNextIndex());
 
         if (clusterNode.getNextIndex() != clusterInfo.getCurrentNode().getNextLogIndex()) {
-//            logger.info("!!!!!Indexes not equal => leaderNext = {}, followerNext = {}",
-//                    clusterInfo.getCurrentNode().getNextLogIndex(), clusterNode.getNextIndex());
             nextIndex = clusterNode.getNextIndex();
             prevLogIndex = nextIndex - 1;
             prevLogTerm = messageService.getTermByIndex(prevLogIndex);
@@ -75,16 +69,14 @@ public class HeartBeatServiceImpl implements HeartBeatService {
             leaderCommit = Math.max(0, prevLogIndex);
         }
 
-        final AppendEntriesRequest request =
-                new AppendEntriesRequest(
-                        clusterInfo.getCurrentNode().getTerm(),
-                        clusterInfo.getCurrentNode().getNodeId(),
-                        prevLogIndex,
-                        prevLogTerm,
-                        entries,
-                        leaderCommit,
-                        true);
-        return request;
+
+        return new AppendEntriesRequest(
+                clusterInfo.getCurrentNode().getTerm(),
+                clusterInfo.getCurrentNode().getNodeId(),
+                prevLogIndex,
+                prevLogTerm,
+                entries,
+                leaderCommit);
     }
 
     @Override

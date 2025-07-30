@@ -31,24 +31,13 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
     public void appendEntries(RequestAppendEntriesRPC request, StreamObserver<ResponseAppendEntriesRPC> responseObserver) {
         logger.debug("appendEntries in gRPC server - request: {}", request);
 
-        if (request.getIsHb()) {
-            AppendEntriesResponse appendEntriesResponse = stateManager.onHeartBeatRequest(convertTo(request));
+        AppendEntriesResponse appendEntriesResponse = stateManager.onReplicateRequest(convertTo(request));
+        ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
+                .setTerm(appendEntriesResponse.term())
+                .setSuccess(appendEntriesResponse.success())
+                .build();
 
-            ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(appendEntriesResponse.term())
-                    .setSuccess(appendEntriesResponse.success())
-                    .build();
-
-            responseObserver.onNext(response);
-        } else {
-            AppendEntriesResponse appendEntriesResponse = stateManager.onReplicateRequest(convertTo(request));
-            ResponseAppendEntriesRPC response = ResponseAppendEntriesRPC.newBuilder()
-                    .setTerm(appendEntriesResponse.term())
-                    .setSuccess(appendEntriesResponse.success())
-                    .build();
-
-            responseObserver.onNext(response);
-        }
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
@@ -61,7 +50,6 @@ public class AppendService extends AppendEntriesServiceGrpc.AppendEntriesService
                 request.getEntriesList().stream()
                         .map(v -> new LogItem(v.getIndex(), v.getCommand(), v.getTerm()))
                         .toList(),
-                request.getLeaderCommit(),
-                request.getIsHb());
+                request.getLeaderCommit());
     }
 }

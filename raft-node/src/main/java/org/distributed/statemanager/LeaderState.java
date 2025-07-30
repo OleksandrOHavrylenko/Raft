@@ -39,23 +39,7 @@ public class LeaderState extends BaseState{
     }
 
     @Override
-    public AppendEntriesResponse onHeartbeatRequest(AppendEntriesRequest request) {
-        logger.debug("!!!Leader received Heartbeat from Leader");
-        if (clusterInfo.getCurrentNode().getTerm() > request.term()) {
-            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        }
-
-        if (request.term() > clusterInfo.getCurrentNode().getTerm()) {
-            this.heartBeatService.shutDownHeartBeats();
-            clusterInfo.getCurrentNode().setTerm(request.term());
-            this.nextState(State.FOLLOWER);
-            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        }
-        return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
-    }
-
-    @Override
-    public void onHeartbeatResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
+    public void onAppendEntriesResponse(AppendEntriesResponse appendEntriesResponse, ClusterNode clusterNode) {
         if (appendEntriesResponse.term() > clusterInfo.getCurrentNode().getTerm()) {
             this.heartBeatService.shutDownHeartBeats();
             clusterInfo.getCurrentNode().setTerm(appendEntriesResponse.term());
