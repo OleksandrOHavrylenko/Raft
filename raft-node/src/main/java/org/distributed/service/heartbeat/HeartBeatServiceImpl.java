@@ -60,12 +60,17 @@ public class HeartBeatServiceImpl implements HeartBeatService {
         long prevLogTerm = messageService.getTermByIndex(prevLogIndex);
         List<LogItem> entries = List.of();
         int leaderCommit = clusterInfo.getCurrentNode().getLeaderCommit();
+//        logger.info("!!! Leader nextIndex = {}, follower nextIndex = {}",
+//                clusterInfo.getCurrentNode().getNextLogIndex(),
+//                clusterNode.getNextIndex());
 
         if (clusterNode.getNextIndex() != clusterInfo.getCurrentNode().getNextLogIndex()) {
+//            logger.info("!!!!!Indexes not equal => leaderNext = {}, followerNext = {}",
+//                    clusterInfo.getCurrentNode().getNextLogIndex(), clusterNode.getNextIndex());
             nextIndex = clusterNode.getNextIndex();
             prevLogIndex = nextIndex - 1;
             prevLogTerm = messageService.getTermByIndex(prevLogIndex);
-            LogItem logItem = messageService.getByIndex(prevLogIndex);
+            LogItem logItem = messageService.getByIndex(nextIndex);
             entries = logItem == null ? List.of() : List.of(logItem);
             leaderCommit = Math.max(0, prevLogIndex);
         }

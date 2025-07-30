@@ -53,7 +53,13 @@ public class FollowerState extends BaseState {
         stopElectionTimeout();
         logger.info("request = {}", request);
         LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
-        if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+        logger.info("lastMessage = {}, prevIndex = {}", lastMessage, IdGenerator.getPreviousIndex());
+        if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
+            startElectionTimeout(0L);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (isFirstItem(lastMessage) ||
+                (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
             request.entries().stream()
                     .findFirst().ifPresent(message -> onMessageSave(message));
             IdGenerator.setLeaderCommit(request.leaderCommit());
@@ -64,6 +70,10 @@ public class FollowerState extends BaseState {
         }
         startElectionTimeout(0L);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    private static boolean isFirstItem(LogItem lastMessage) {
+        return IdGenerator.getPreviousIndex() < 0 && lastMessage == null;
     }
 
     @Override
@@ -98,8 +108,14 @@ public class FollowerState extends BaseState {
     @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         stopElectionTimeout();
-        LogItem lastMessage = messageService.getByIndex(IdGenerator.getLeaderCommit());
-        if (lastMessage == null || (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+        LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
+        if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
+            logger.info("In null but Not first message, prevLogIndex = {}", request.prevLogIndex());
+            startElectionTimeout(0L);
+            return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+        if (isFirstItem(lastMessage) ||
+                (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
 
             request.entries().stream()
                     .findFirst().ifPresent(message -> onMessageSave(message));

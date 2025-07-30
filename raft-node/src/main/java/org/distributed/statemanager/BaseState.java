@@ -18,10 +18,10 @@ import java.util.Random;
  **/
 public abstract class BaseState {
     public static final long STARTUP_DELAY = 5000L;
-    public static final long ELECTION_TIMEOUT_MIN = 2500;
-    public static final long ELECTION_TIMOUT_MAX = 5000;
+    public static final long ELECTION_TIMEOUT_MIN = 7000;
+    public static final long ELECTION_TIMOUT_MAX = 10000;
     public static final long VOTE_TIMEOUT_MILLIS = 100L;
-    public static final long HEARTBEAT_INTERVAL = 1500L;
+    public static final long HEARTBEAT_INTERVAL = 5000L;
 
     protected final StateManager stateManager;
     protected final MessageService messageService;

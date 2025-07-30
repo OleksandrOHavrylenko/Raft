@@ -138,6 +138,10 @@ public class GrpcClientImpl implements GrpcClient {
             @Override
             public void onNext(ResponseAppendEntriesRPC value) {
                 logger.info("Response from : {} node: {}", host, value);
+                AppendEntriesResponse response = new AppendEntriesResponse(value.getTerm(), value.getSuccess());
+
+                StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
+                stateManager.onHeartBeatResponse(response, clusterNode);
             }
 
             @Override
