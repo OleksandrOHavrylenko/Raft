@@ -1,5 +1,6 @@
 package org.distributed.service.message;
 
+import org.distributed.exceptions.NoMajorityException;
 import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.cluster.ClusterInfo;
@@ -66,10 +67,11 @@ public class MessageServiceImpl implements MessageService {
         }
         if (!countDownIsZero) {
             IdGenerator.setId(IdGenerator.getPreviousIndex());
-            return logRepository.getLogItem(IdGenerator.getLeaderCommit());
+            throw new NoMajorityException(clusterInfo.getNodeState());
+        } else {
+            IdGenerator.setLeaderCommit(id);
+            return logItem;
         }
-        IdGenerator.setLeaderCommit(id);
-        return logItem;
     }
 
     @Override

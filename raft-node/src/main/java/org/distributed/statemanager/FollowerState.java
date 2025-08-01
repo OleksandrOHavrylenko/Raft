@@ -1,5 +1,6 @@
 package org.distributed.statemanager;
 
+import org.distributed.exceptions.NotLeaderException;
 import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
@@ -120,7 +121,7 @@ public class FollowerState extends BaseState {
     @Override
     public LogItem append(String message) {
         logger.info("Append denied in FollowerState, node = {}", clusterInfo.getCurrentNode().getNodeId());
-        return null;
+        throw new NotLeaderException(clusterInfo.getNodeState());
     }
 
     @Override

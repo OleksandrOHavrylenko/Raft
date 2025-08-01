@@ -145,9 +145,6 @@ public class GrpcClientImpl implements GrpcClient {
             @Override
             public void onError(Throwable t) {
                 logger.error("Replication of LogEntry to {}: Failed: {}", host, Status.fromThrowable(t));
-                if(writeConcernLatch != null) {
-                    writeConcernLatch.countDown();
-                }
             }
 
             @Override
