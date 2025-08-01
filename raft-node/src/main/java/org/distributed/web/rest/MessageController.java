@@ -31,8 +31,8 @@ public class MessageController {
     }
 
     @GetMapping("/state")
-    public State getState() {
-        return stateManager.getCurrentState();
+    public String getState() {
+        return String.format("%s, term = %d.", stateManager.getCurrentState(), stateManager.getClusterInfo().getCurrentNode().getTerm());
     }
 
     @PostMapping("/append")
