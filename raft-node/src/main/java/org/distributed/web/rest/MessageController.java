@@ -1,6 +1,7 @@
 package org.distributed.web.rest;
 
 import org.distributed.model.dto.LogItem;
+import org.distributed.statemanager.State;
 import org.distributed.statemanager.StateManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,13 +25,18 @@ public class MessageController {
     }
 
     @GetMapping("/list")
-    List<LogItem> getMessages() {
+    public List<LogItem> getMessages() {
         List<LogItem> messages = stateManager.getMessages();
         return messages;
     }
 
+    @GetMapping("/state")
+    public State getState() {
+        return stateManager.getCurrentState();
+    }
+
     @PostMapping("/append")
-    String append(@Nonnull @RequestBody String message) {
+    public String append(@Nonnull @RequestBody String message) {
         final LogItem item = stateManager.append(message);
         return String.format("ACK %s", item.message());
     }
