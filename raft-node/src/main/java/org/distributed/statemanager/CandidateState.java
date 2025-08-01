@@ -1,7 +1,6 @@
 package org.distributed.statemanager;
 
 import org.distributed.model.ClusterNode;
-import org.distributed.model.ElectionStatus;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.cluster.ClusterInfo;
