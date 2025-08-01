@@ -8,6 +8,7 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.ResponseVoteRPC;
 import org.distributed.util.IdGenerator;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public abstract class BaseState {
 
     public abstract void onStart();
     public abstract VoteResponse onRequestVote(final VoteRequest voteRequest);
+    public abstract void onResponseVote(final ResponseVoteRPC responseVoteRPC, ClusterNode clusterNode);
     public abstract LogItem append(final String message);
     public abstract List<LogItem> getMessages();
     public abstract void nextState(State nextState);
@@ -50,7 +52,7 @@ public abstract class BaseState {
         return new Random(System.nanoTime()).nextLong(min, max + 1L);
     }
 
-    protected boolean isFirstItem(LogItem lastMessage) {
-        return IdGenerator.getPreviousIndex() < 0 && lastMessage == null;
+    protected boolean isFirstItem(LogItem lastMessage, int prevLogIndexFromRequest) {
+        return lastMessage == null && (prevLogIndexFromRequest == IdGenerator.getPreviousIndex());
     }
 }

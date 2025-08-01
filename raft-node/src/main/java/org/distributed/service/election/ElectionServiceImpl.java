@@ -1,17 +1,16 @@
 package org.distributed.service.election;
 
-import org.distributed.model.ElectionStatus;
 import org.distributed.model.cluster.ClusterInfo;
 import org.distributed.model.vote.VoteRequest;
-import org.distributed.model.vote.VoteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.distributed.statemanager.BaseState.VOTE_TIMEOUT_MILLIS;
 
@@ -23,7 +22,7 @@ public class ElectionServiceImpl implements ElectionService {
     private static final Logger logger = LoggerFactory.getLogger(ElectionServiceImpl.class);
 
     private final ClusterInfo clusterInfo;
-    private List<Future<VoteResponse>> voteTimeOutHandler;
+    private List<? extends Future<?>> voteTimeOutHandler;
     private final ExecutorService executor;
 
     public ElectionServiceImpl(final ClusterInfo clusterInfo) {
@@ -32,12 +31,8 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
-    public ElectionStatus startLeaderElection() {
+    public void startLeaderElection() {
         logger.info("Starting leader election");
-
-//        init with 1, because 1 vote for ourself
-        final AtomicInteger voteCounter = new AtomicInteger(1);
-        final AtomicInteger errorsDuringElection = new AtomicInteger(0);
 
         final VoteRequest voteRequest = new VoteRequest(
                 clusterInfo.getCurrentNode().getTerm(),
@@ -48,31 +43,6 @@ public class ElectionServiceImpl implements ElectionService {
         this.voteTimeOutHandler = clusterInfo.getOtherNodes().stream()
                 .map(otherNode -> executor.submit(
                         () -> otherNode.getGrpcClient().requestVote(voteRequest, VOTE_TIMEOUT_MILLIS))).toList();
-
-        this.voteTimeOutHandler.forEach(future -> voteResultProcessing(future, VOTE_TIMEOUT_MILLIS + 1L, voteCounter, errorsDuringElection));
-
-        if (voteCounter.get() >= clusterInfo.getMajoritySize()) {
-            logger.info("Leader election --> voteThis = {}", voteCounter.get());
-            return ElectionStatus.ELECTED;
-        } else if(errorsDuringElection.get() == clusterInfo.getOtherNodeCount()) {
-            return ElectionStatus.RESTART_ELECTION;
-        } else {
-            return ElectionStatus.ANOTHER_LEADER;
-        }
-    }
-
-    private void voteResultProcessing(Future<VoteResponse> future, long timeOutMillis, AtomicInteger voteThis, AtomicInteger errorsDuringElection) {
-        try {
-            final VoteResponse voteResponse = future.get();
-            if (voteResponse != null) {
-                if (voteResponse.voteGranted()) {
-                    voteThis.incrementAndGet();
-                }
-            }
-        } catch (Exception e) {
-            errorsDuringElection.incrementAndGet();
-            logger.error("Error --> occurred due to timeout waiting for vote from other node.", e);
-        }
     }
 
     @Override

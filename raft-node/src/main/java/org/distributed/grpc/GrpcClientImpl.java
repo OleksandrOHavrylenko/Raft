@@ -9,7 +9,6 @@ import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
 import org.distributed.model.vote.VoteRequest;
-import org.distributed.model.vote.VoteResponse;
 import org.distributed.statemanager.StateManager;
 import org.distributed.stubs.*;
 import org.distributed.util.SpringContext;
@@ -43,7 +42,7 @@ public class GrpcClientImpl implements GrpcClient {
     }
 
     @Override
-    public VoteResponse requestVote(final VoteRequest voteRequest, final long timeoutMillis) {
+    public void requestVote(final VoteRequest voteRequest, final long timeoutMillis) {
         final RequestVoteRPC request = RequestVoteRPC.newBuilder()
                 .setTerm(voteRequest.term())
                 .setCandidateId(voteRequest.candidateId())
@@ -51,17 +50,18 @@ public class GrpcClientImpl implements GrpcClient {
                 .setLastLogTerm(voteRequest.lastLogTerm())
                 .build();
 
-        ResponseVoteRPC responseVoteRPC;
+        ResponseVoteRPC responseVoteRPC = null;
         try {
             responseVoteRPC = voteBlockingStub
                     .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
                     .requestVote(request);
         } catch (StatusRuntimeException e) {
             logger.warn("RPC requestVote to host: {} - failed: {}", this.host, e.getStatus());
-            return new VoteResponse(0, false);
         }
 
-        return new VoteResponse(responseVoteRPC.getTerm(), responseVoteRPC.getVoteGranted());
+        StateManager stateManager = Objects.requireNonNull(SpringContext.getBean(StateManager.class));
+        stateManager.onResponseVote(responseVoteRPC, clusterNode);
+
     }
 
     @Override

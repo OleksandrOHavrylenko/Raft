@@ -8,6 +8,7 @@ import org.distributed.model.dto.LogItem;
 import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.ResponseVoteRPC;
 import org.distributed.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,11 @@ public class FollowerState extends BaseState {
     }
 
     @Override
+    public void onResponseVote(final ResponseVoteRPC responseVoteRPC, final ClusterNode clusterNode) {
+        logger.debug("Nothing to do onResponseVote in FollowerState");
+    }
+
+    @Override
     public AppendEntriesResponse onReplicateRequest(final AppendEntriesRequest request) {
         logger.debug("Heartbeat from leader received in FollowerState");
         stopElectionTimeout();
@@ -93,7 +99,7 @@ public class FollowerState extends BaseState {
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
-        if (isFirstItem(lastMessage) ||
+        if (isFirstItem(lastMessage, request.prevLogIndex()) ||
                 (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
 
             request.entries().stream()

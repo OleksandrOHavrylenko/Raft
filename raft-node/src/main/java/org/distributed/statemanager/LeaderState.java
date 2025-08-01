@@ -9,6 +9,7 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.heartbeat.HeartBeatService;
 import org.distributed.service.message.MessageService;
+import org.distributed.stubs.ResponseVoteRPC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +74,11 @@ public class LeaderState extends BaseState{
         }
 
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public void onResponseVote(final ResponseVoteRPC responseVoteRPC, final ClusterNode clusterNode) {
+        logger.debug("Nothing to do onResponseVote in LeaderState");
     }
 
     @Override

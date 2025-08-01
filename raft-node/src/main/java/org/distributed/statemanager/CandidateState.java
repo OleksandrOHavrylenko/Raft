@@ -10,7 +10,7 @@ import org.distributed.model.vote.VoteRequest;
 import org.distributed.model.vote.VoteResponse;
 import org.distributed.service.election.ElectionService;
 import org.distributed.service.message.MessageService;
-import org.distributed.util.IdGenerator;
+import org.distributed.stubs.ResponseVoteRPC;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Oleksandr Havrylenko
@@ -33,6 +34,9 @@ public class CandidateState extends BaseState {
     private final ClusterInfo clusterInfo;
     private ScheduledFuture<?> timeOutHandler;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    final AtomicInteger voteThis = new AtomicInteger(1);
+    final AtomicInteger voteOther = new AtomicInteger(0);
+    final AtomicInteger errorsDuringElection = new AtomicInteger(0);
 
     public CandidateState(final StateManager stateManager, final ElectionService electionService,
                           final MessageService messageService, final ClusterInfo clusterInfo) {
@@ -44,14 +48,11 @@ public class CandidateState extends BaseState {
     @Override
     public void onStart() {
         logger.info("Start --> CandidateState");
+        resetCounters();
+
         clusterInfo.getCurrentNode().voteForSelfAndIncrTerm();
 
-        final ElectionStatus electionStatus = this.electionService.startLeaderElection();
-        switch (electionStatus) {
-            case ELECTED -> nextState(State.LEADER);
-            case ANOTHER_LEADER -> nextState(State.FOLLOWER);
-            case RESTART_ELECTION -> startElectionTimeout();
-        }
+        this.electionService.startLeaderElection();
     }
 
     @Override
@@ -76,6 +77,39 @@ public class CandidateState extends BaseState {
 
         startElectionTimeout();
         return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+    }
+
+    @Override
+    public void onResponseVote(final ResponseVoteRPC responseVoteRPC, final ClusterNode clusterNode) {
+        if (responseVoteRPC != null) {
+            if (responseVoteRPC.getTerm() > clusterInfo.getCurrentNode().getTerm()) {
+                stopElectionTimeout();
+                clusterInfo.getCurrentNode().setTerm(responseVoteRPC.getTerm());
+                this.nextState(State.FOLLOWER);
+            }
+
+            if (responseVoteRPC.getVoteGranted()) {
+                voteThis.incrementAndGet();
+            } else {
+                voteOther.incrementAndGet();
+            }
+        } else {
+            errorsDuringElection.incrementAndGet();
+        }
+
+        decideNextStep();
+    }
+
+    private void decideNextStep() {
+        if (voteThis.get() >= clusterInfo.getMajoritySize()) {
+            nextState(State.LEADER);
+        }
+        if (errorsDuringElection.get() == clusterInfo.getMajoritySize()) {
+            nextState(State.CANDIDATE);
+        }
+        if (voteThis.get() + voteOther.get() + errorsDuringElection.get() >= clusterInfo.getClusterSize()) {
+            nextState(State.FOLLOWER);
+        }
     }
 
     @Override
@@ -109,6 +143,7 @@ public class CandidateState extends BaseState {
     @Override
     public void nextState(State nextState) {
         stopElectionTimeout();
+        resetCounters();
         electionService.stopLeaderElection();
         this.stateManager.setState(nextState);
     }
@@ -142,5 +177,11 @@ public class CandidateState extends BaseState {
     public void shutdown() {
         logger.info("Stopping election timer in CandidateState");
         scheduler.shutdownNow();
+    }
+
+    private void resetCounters() {
+        this.voteThis.set(1);
+        this.voteOther.set(0);
+        this.errorsDuringElection.set(0);
     }
 }
