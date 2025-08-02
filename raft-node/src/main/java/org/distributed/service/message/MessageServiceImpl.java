@@ -61,9 +61,9 @@ public class MessageServiceImpl implements MessageService {
         }
         boolean countDownIsZero = false;
         try {
-            countDownIsZero = writeConcernLatch.await(REPLICATE_TIMEOUT, TimeUnit.MILLISECONDS);
+            countDownIsZero = writeConcernLatch.await(REPLICATE_TIMEOUT + 10L, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            logger.info("TimeOut occurred while replication", e);
+            logger.info("Timeout occurred while replication", e);
         }
         if (!countDownIsZero) {
             IdGenerator.setId(IdGenerator.getPreviousIndex());
