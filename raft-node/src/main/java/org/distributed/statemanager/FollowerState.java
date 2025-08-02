@@ -1,6 +1,5 @@
 package org.distributed.statemanager;
 
-import org.distributed.exceptions.NotLeaderException;
 import org.distributed.model.ClusterNode;
 import org.distributed.model.appendentries.AppendEntriesRequest;
 import org.distributed.model.appendentries.AppendEntriesResponse;
@@ -63,13 +62,13 @@ public class FollowerState extends BaseState {
 
         if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
                 (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
-                    clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
+                        clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
             startElectionTimeout(0L);
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
         } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
             if ((clusterInfo.getCurrentNode().getVotedFor() == null ||
                     clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId()))
-            && (clusterInfo.getCurrentNode().getLastLogIndex() <= voteRequest.lastLogIndex())) {
+                    && (clusterInfo.getCurrentNode().getLastLogIndex() <= voteRequest.lastLogIndex())) {
                 clusterInfo.getCurrentNode().setVotedFor(voteRequest.candidateId());
                 return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
             }
@@ -95,19 +94,22 @@ public class FollowerState extends BaseState {
             clusterInfo.getCurrentNode().setTerm(request.term());
         }
 
-        LogItem lastMessage = messageService.getByIndex(request.prevLogIndex());
+        int getIndex = request.prevLogIndex();
+        LogItem lastMessage = messageService.getByIndex(getIndex);
         if (lastMessage == null && IdGenerator.getPreviousIndex() >= 0) {
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
         }
-        if (isFirstItem(lastMessage, request.prevLogIndex()) ||
-                (lastMessage.id() == request.prevLogIndex() && lastMessage.term() == request.prevLogTerm())) {
+        if (isFirstItem(lastMessage, getIndex) ||
+                (lastMessage != null && lastMessage.id() == getIndex && lastMessage.term() == request.prevLogTerm())) {
 
             request.entries().stream()
                     .findFirst().ifPresent(message -> onMessageSave(message));
             IdGenerator.setLeaderCommit(request.leaderCommit());
             startElectionTimeout(0L);
             return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), true);
+        } else {
+            messageService.eraseByIndex(getIndex);
         }
         startElectionTimeout(0L);
         return new AppendEntriesResponse(clusterInfo.getCurrentNode().getTerm(), false);
@@ -119,19 +121,14 @@ public class FollowerState extends BaseState {
     }
 
     @Override
-    public LogItem append(String message) {
-        logger.info("Append denied in FollowerState, node = {}", clusterInfo.getCurrentNode().getNodeId());
-        throw new NotLeaderException(clusterInfo.getNodeState());
-    }
-
-    @Override
     public List<LogItem> getMessages() {
         return messageService.getMessages();
     }
 
     @Override
     public void nextState(final State nextState) {
-            this.stateManager.setState(nextState);
+        stopElectionTimeout();
+        this.stateManager.setState(nextState);
     }
 
     @Override
@@ -150,6 +147,7 @@ public class FollowerState extends BaseState {
         logger.debug("Election timer intRange = {}", timeout);
         timeOutHandler = scheduler.schedule(this::onElectionTimeout, timeout, TimeUnit.MILLISECONDS);
     }
+
     public void stopElectionTimeout() {
         logger.debug("Trying to reset election timeout ...");
         if (timeOutHandler != null && !timeOutHandler.isDone()) {
@@ -157,6 +155,7 @@ public class FollowerState extends BaseState {
             logger.debug("Election timeout reset.");
         }
     }
+
     private void onElectionTimeout() {
         logger.info("Election timeout triggered. Becoming candidate...");
         logger.info("Time is Out Follower --> Candidate");

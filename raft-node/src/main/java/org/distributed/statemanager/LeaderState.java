@@ -108,6 +108,7 @@ public class LeaderState extends BaseState{
 
     @Override
     public void nextState(State nextState) {
+        heartBeatService.shutDownHeartBeats();
         logger.info("Leader goes to nextState = {}", nextState);
         this.stateManager.setState(nextState);
     }

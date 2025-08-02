@@ -60,4 +60,13 @@ public class LogRepository {
             readWriteLock.readLock().unlock();
         }
     }
+
+    public void eraseByIndex(int getIndex) {
+        try {
+            readWriteLock.writeLock().lock();
+            logsRepository[getIndex] = null;
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
+    }
 }

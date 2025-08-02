@@ -67,6 +67,7 @@ public class MessageServiceImpl implements MessageService {
         }
         if (!countDownIsZero) {
             IdGenerator.setId(IdGenerator.getPreviousIndex());
+            eraseByIndex(id);
             throw new NoMajorityException(clusterInfo.getNodeState());
         } else {
             IdGenerator.setLeaderCommit(id);
@@ -101,5 +102,10 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public LogItem getByIndex(int index) {
         return logRepository.getMessageByIndex(index);
+    }
+
+    @Override
+    public void eraseByIndex(int getIndex) {
+        logRepository.eraseByIndex(getIndex);
     }
 }

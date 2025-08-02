@@ -14,4 +14,6 @@ public interface MessageService {
     void saveMessages(LogItem messages);
     long getTermByIndex(int index);
     LogItem getByIndex(int index);
+
+    void eraseByIndex(int getIndex);
 }
