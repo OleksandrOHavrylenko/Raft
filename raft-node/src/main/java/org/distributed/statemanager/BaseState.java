@@ -25,10 +25,10 @@ public abstract class BaseState {
     protected static final Logger logger = LoggerFactory.getLogger(BaseState.class);
 
     public static final long STARTUP_DELAY = 5000L;
-    public static final long ELECTION_TIMEOUT_MIN = 7000;
-    public static final long ELECTION_TIMOUT_MAX = 10000;
-    public static final long VOTE_TIMEOUT_MILLIS = 100L;
-    public static final long HEARTBEAT_INTERVAL = 5000L;
+    public static final long ELECTION_TIMEOUT_MIN = 150L;
+    public static final long ELECTION_TIMOUT_MAX = 300L;
+    public static final long VOTE_TIMEOUT_MILLIS = 20L;
+    public static final long HEARTBEAT_INTERVAL = 50L;
     public static final long REPLICATE_TIMEOUT = 50L;
 
     protected final StateManager stateManager;
