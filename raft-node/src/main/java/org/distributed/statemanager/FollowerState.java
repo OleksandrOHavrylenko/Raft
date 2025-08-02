@@ -65,7 +65,9 @@ public class FollowerState extends BaseState {
                         clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
             startElectionTimeout(0L);
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        } else if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+        }
+
+        if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
             if ((clusterInfo.getCurrentNode().getVotedFor() == null ||
                     clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId()))
                     && (clusterInfo.getCurrentNode().getLastLogIndex() <= voteRequest.lastLogIndex())) {

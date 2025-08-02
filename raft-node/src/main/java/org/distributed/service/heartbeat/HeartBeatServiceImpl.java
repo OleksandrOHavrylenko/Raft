@@ -84,7 +84,6 @@ public class HeartBeatServiceImpl implements HeartBeatService {
         logger.info("Shutting down <-- HeartBeat executor.");
         scheduledHeartBeatHandler.stream()
                 .filter(Objects::nonNull)
-                .filter(future -> !future.isDone())
                 .forEach(future -> future.cancel(true));
     }
 }

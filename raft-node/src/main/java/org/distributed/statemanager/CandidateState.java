@@ -63,15 +63,26 @@ public class CandidateState extends BaseState {
     public VoteResponse onRequestVote(final VoteRequest voteRequest) {
         stopElectionTimeout();
 
+        if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
+            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
+            nextState(State.FOLLOWER);
+            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+
         if (clusterInfo.getCurrentNode().getTerm() > voteRequest.term() ||
                 (clusterInfo.getCurrentNode().getTerm() == voteRequest.term() &&
                         clusterInfo.getCurrentNode().getLastLogIndex() > voteRequest.lastLogIndex())) {
             startElectionTimeout();
             return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
-        } else if (voteRequest.term() > clusterInfo.getCurrentNode().getTerm()) {
-            clusterInfo.getCurrentNode().setTerm(voteRequest.term());
-            nextState(State.FOLLOWER);
-            return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), false);
+        }
+
+        if (voteRequest.term() == clusterInfo.getCurrentNode().getTerm()) {
+            if ((clusterInfo.getCurrentNode().getVotedFor() == null ||
+                    clusterInfo.getCurrentNode().getVotedFor().equals(voteRequest.candidateId()))
+                    && (clusterInfo.getCurrentNode().getLastLogIndex() <= voteRequest.lastLogIndex())) {
+                clusterInfo.getCurrentNode().setVotedFor(voteRequest.candidateId());
+                return new VoteResponse(clusterInfo.getCurrentNode().getTerm(), true);
+            }
         }
 
         startElectionTimeout();
