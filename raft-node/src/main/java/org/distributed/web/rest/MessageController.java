@@ -25,8 +25,8 @@ public class MessageController {
     }
 
     @GetMapping("/list")
-    public List<LogItem> getMessages() {
-        List<LogItem> messages = stateManager.getMessages();
+    public List<String> getMessages() {
+        List<String> messages = stateManager.getMessages().stream().map(LogItem::message).toList();
         return messages;
     }
 

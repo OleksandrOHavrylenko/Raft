@@ -53,6 +53,9 @@ public class LeaderState extends BaseState{
             }
         }else {
             clusterNode.decrementAndGetNextIndex();
+            if (clusterNode.getNextIndex() < -1) {
+                clusterNode.setNextIndex(-1);
+            }
             logger.info("Here because fail response from {}, new nextIndex = {}", clusterNode, clusterNode.getNextIndex());
         }
         logger.info("New nextIndex={} for node Leader = {}", clusterNode.getNextIndex() , clusterInfo.getCurrentNode().getNextLogIndex());
